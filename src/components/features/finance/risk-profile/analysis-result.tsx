@@ -7,8 +7,14 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, Sector } fro
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-// [UPDATED] Import tipe data yang sinkron dengan Wizard
 import { AnalysisResultProps } from "@/lib/types/risk-profile";
+
+// Extends properti aslinya untuk menghindari error TypeScript jika types belum lengkap
+interface ExtendedAnalysisResultProps extends AnalysisResultProps {
+    onDownloadPdf?: () => void;
+    onRetake?: () => void;
+    isDownloading?: boolean;
+}
 
 const renderActiveShape = (props: any) => {
     const RADIAN = Math.PI / 180;
@@ -25,7 +31,6 @@ const renderActiveShape = (props: any) => {
 
     return (
         <g>
-            {/* Label Tengah Donut */}
             <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="text-lg font-bold">
                 {`${(percent * 100).toFixed(0)}%`}
             </text>
@@ -48,12 +53,12 @@ const renderActiveShape = (props: any) => {
 };
 
 export function AnalysisResult({
-    result, // [UPDATED] Menggunakan result sesuai props baru
-    answerHistory, // [NEW] Menerima riwayat jawaban
+    result,
+    answerHistory,
     onDownloadPdf,
     onRetake,
     isDownloading = false
-}: AnalysisResultProps) {
+}: ExtendedAnalysisResultProps) {
     const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
 
     const onPieEnter = useCallback((_: any, index: number) => {
@@ -76,7 +81,6 @@ export function AnalysisResult({
 
     return (
         <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-            {/* Header */}
             <div className="text-center space-y-2 mb-8">
                 <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">Hasil Analisis Profil Risiko</h2>
                 <p className="text-slate-500">
@@ -85,21 +89,19 @@ export function AnalysisResult({
             </div>
 
             <div className="grid lg:grid-cols-3 gap-6">
-                {/* Ringkasan Profil */}
                 <Card className={`lg:col-span-2 border shadow-sm overflow-hidden ${themeClass}`}>
                     <CardContent className="p-8">
                         <div className="flex flex-col md:flex-row items-center gap-8">
-                            {/* Donut Chart Section */}
                             <div className="h-64 w-64 shrink-0 relative overflow-visible">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart style={{ overflow: "visible" }}>
                                         <Pie
-                                            activeIndex={activeIndex}
+                                            {...({ activeIndex } as any)}
                                             activeShape={renderActiveShape}
                                             data={chartData}
                                             cx="50%"
                                             cy="50%"
-                                            innerRadius={60} // [UPDATED] Menjadi Donut
+                                            innerRadius={60}
                                             outerRadius={80}
                                             dataKey="value"
                                             onMouseEnter={onPieEnter}
@@ -115,7 +117,6 @@ export function AnalysisResult({
                                 </ResponsiveContainer>
                             </div>
 
-                            {/* Teks Deskripsi */}
                             <div className="space-y-4">
                                 <div>
                                     <p className="text-xs font-bold uppercase tracking-widest opacity-70 mb-1">Tipe Profil</p>
@@ -134,7 +135,6 @@ export function AnalysisResult({
                     </CardContent>
                 </Card>
 
-                {/* Skor Card */}
                 <Card className="border-slate-200 shadow-sm flex flex-col justify-center bg-white">
                     <CardContent className="p-6 text-center space-y-4">
                         <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-50 text-blue-600 mb-2">
@@ -151,7 +151,6 @@ export function AnalysisResult({
                 </Card>
             </div>
 
-            {/* [NEW] Section Riwayat Jawaban */}
             {answerHistory && answerHistory.length > 0 && (
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
@@ -189,7 +188,6 @@ export function AnalysisResult({
                 </div>
             )}
 
-            {/* Action Bar */}
             <Card className="bg-slate-900 border-0 shadow-xl overflow-hidden rounded-2xl">
                 <CardContent className="p-6 flex flex-col md:flex-row gap-6 items-center justify-between">
                     <div className="flex items-center text-slate-400 text-sm">

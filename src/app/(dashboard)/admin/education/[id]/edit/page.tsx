@@ -2,21 +2,15 @@
 
 import { useEffect, useState, use } from 'react';
 import { ModuleForm } from '@/components/features/admin/education/form/module-form';
-// Import adminEducationService untuk mengambil data modul/materi
-import { adminEducationService } from '@/services/education.service';
+import { educationService } from '@/services/education.service';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-/**
- * Interface props disesuaikan dengan standar Next.js terbaru
- * params didefinisikan sebagai Promise
- */
 interface EditModulePageProps {
     params: Promise<{ id: string }>;
 }
 
 export default function EditModulePage({ params }: EditModulePageProps) {
-    // 1. Unwrap params menggunakan React.use() untuk mendapatkan ID dari URL
     const resolvedParams = use(params);
     const moduleId = resolvedParams.id;
 
@@ -24,15 +18,10 @@ export default function EditModulePage({ params }: EditModulePageProps) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        /**
-         * Mengambil data modul berdasarkan ID.
-         * Menggunakan educationService.getModuleById sesuai definisi di service.
-         */
         const fetchData = async () => {
             try {
                 setLoading(true);
-                // adminEducationService memiliki method getModuleById untuk fetching detail
-                const res = await adminEducationService.getModuleById(moduleId);
+                const res = await educationService.getModuleDetailAdmin(moduleId);
                 setData(res);
             } catch (err: any) {
                 console.error("Fetch Error:", err);
@@ -55,7 +44,6 @@ export default function EditModulePage({ params }: EditModulePageProps) {
         );
     }
 
-    // Jika data tidak ditemukan setelah loading selesai
     if (!data && !loading) {
         return (
             <div className="flex h-[50vh] w-full items-center justify-center">
@@ -67,9 +55,6 @@ export default function EditModulePage({ params }: EditModulePageProps) {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <h2 className="text-3xl font-bold tracking-tight">Edit Materi</h2>
-            {/* Prop 'isEditing' dihapus karena tidak ada di interface ModuleFormProps.
-               Cukup kirimkan initialData, form akan mendeteksi mode edit jika data ada.
-            */}
             <ModuleForm initialData={data} />
         </div>
     );
