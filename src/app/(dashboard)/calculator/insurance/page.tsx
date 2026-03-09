@@ -326,7 +326,7 @@ export default function InsurancePage() {
             Perencanaan Asuransi
           </h1>
           <p className="text-brand-100 text-sm md:text-base max-w-lg mx-auto leading-relaxed opacity-90 drop-shadow-md">
-            Hitung kebutuhan Uang Pertanggungan (UP) untuk melindungi masa depan finansial keluarga Anda bersama maxipro.
+            Hitung kebutuhan Uang Pertanggungan (UP) untuk melindungi masa depan finansial keluarga Anda bersama KeuanganKu.
           </p>
         </div>
       </div>

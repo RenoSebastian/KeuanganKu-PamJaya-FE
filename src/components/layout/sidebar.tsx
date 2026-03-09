@@ -104,7 +104,7 @@ export function Sidebar() {
           <h1 className="font-extrabold text-lg leading-tight bg-linear-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">
             KeuanganKu
           </h1>
-          <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">MAXIPRO</p>
+          <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">PamJaya</p>
         </div>
       </div>
 

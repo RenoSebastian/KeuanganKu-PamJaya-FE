@@ -272,7 +272,7 @@ export default function PensionPage() {
             Dana Pensiun
           </h1>
           <p className="text-brand-100 text-sm md:text-base max-w-lg mx-auto leading-relaxed opacity-90 drop-shadow-md">
-            Rencanakan masa depan sejahtera dengan kekuatan dana Anda saat ini bersama MAXIPRO.
+            Rencanakan masa depan sejahtera dengan kekuatan dana Anda saat ini bersama KeuanganKu.
           </p>
         </div>
       </div>

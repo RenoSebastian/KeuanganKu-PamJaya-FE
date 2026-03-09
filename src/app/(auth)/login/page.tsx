@@ -86,7 +86,7 @@ function LoginForm() {
             <Input
               id="email"
               type="email"
-              placeholder="nama@maxipro.co.id"
+              placeholder="nama@PamJaya.co.id"
               className="pl-10 h-12 bg-slate-50 border-slate-200 focus:bg-white transition-all"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -190,7 +190,7 @@ export default function LoginPage() {
         </Suspense>
 
         <p className="text-center text-xs text-slate-400 mt-8">
-          &copy; {new Date().getFullYear()} MAXIPRO Financial Wellness. All rights reserved.
+          &copy; {new Date().getFullYear()} KeuanganKu Financial Wellness. All rights reserved.
         </p>
       </div>
     </div>

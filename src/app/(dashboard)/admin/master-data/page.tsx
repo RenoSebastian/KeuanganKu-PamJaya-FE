@@ -141,7 +141,7 @@ export default function MasterDataPage() {
               Unit Kerja & Struktur
             </h1>
             <p className="text-brand-100 text-sm mt-1 opacity-90 max-w-lg">
-              Kelola daftar Bidang, Divisi, dan Unit Organisasi dalam ekosistem MAXIPRO.
+              Kelola daftar Bidang, Divisi, dan Unit Organisasi dalam Sistem KeuanganKu.
             </p>
           </div>
 

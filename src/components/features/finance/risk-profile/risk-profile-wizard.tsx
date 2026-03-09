@@ -10,7 +10,8 @@ import { QuizSection } from "./quiz-section";
 import { AnalysisResult } from "./analysis-result";
 
 // Types & Services
-import { RiskProfileResponse, RiskProfilePayload } from "@/lib/types/risk-profile";
+// [UPDATED] Import RiskAnswerHistory dari View Model yang sudah kita buat sebelumnya
+import { RiskProfileResponse, RiskProfilePayload, RiskAnswerHistory } from "@/lib/types/risk-profile";
 import { riskProfileService } from "@/services/risk-profile.service";
 
 // Definisi Step Flow
@@ -26,6 +27,9 @@ export function RiskProfileWizard() {
     const [clientData, setClientData] = useState<{ name: string; age: number } | null>(null);
     const [simulationResult, setSimulationResult] = useState<RiskProfileResponse | null>(null);
 
+    // [NEW] State untuk menyimpan agregat pertanyaan & jawaban user
+    const [answerHistory, setAnswerHistory] = useState<RiskAnswerHistory[]>([]);
+
     // --- HANDLERS (LOGIC FLOW) ---
 
     /**
@@ -40,9 +44,9 @@ export function RiskProfileWizard() {
 
     /**
      * Step 2: Handle Selesai Kuis
-     * Menerima array jawaban ['A', 'B', ...], menyusun payload, dan tembak API.
+     * [UPDATED] Menerima array jawaban murni untuk API dan object history untuk UI.
      */
-    const handleQuizFinish = async (answers: string[]) => {
+    const handleQuizFinish = async (answers: string[], history: RiskAnswerHistory[] = []) => {
         if (!clientData) {
             toast.error("Data identitas hilang. Silakan ulangi.");
             setCurrentStep("IDENTITY");
@@ -62,8 +66,10 @@ export function RiskProfileWizard() {
             // 2. Panggil API Calculation (Stateless)
             const result = await riskProfileService.calculateProfile(payload);
 
-            // 3. Simpan Hasil & Pindah ke Result View
+            // 3. Simpan Hasil, Simpan Riwayat, & Pindah ke Result View
             setSimulationResult(result);
+            setAnswerHistory(history); // [NEW] Simpan riwayat untuk dikirim ke UI Result
+
             setCurrentStep("RESULT");
             toast.success("Analisis profil risiko berhasil!");
 
@@ -100,10 +106,9 @@ export function RiskProfileWizard() {
      * Menghapus semua state temporer.
      */
     const handleRetake = () => {
-        // Opsional: clientData bisa di-keep jika ingin user tidak perlu input nama lagi
-        // Disini saya reset total untuk privasi.
         setClientData(null);
         setSimulationResult(null);
+        setAnswerHistory([]); // [NEW] Bersihkan riwayat jawaban
         setCurrentStep("IDENTITY");
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
@@ -113,8 +118,8 @@ export function RiskProfileWizard() {
     return (
         <div className="min-h-150 w-full py-8 px-4 md:px-0">
             {/* AnimatePresence memungkinkan animasi exit saat komponen diganti.
-        Ini memberikan UX yang lebih 'fluid' seperti aplikasi mobile.
-      */}
+            Ini memberikan UX yang lebih 'fluid' seperti aplikasi mobile.
+            */}
             <AnimatePresence mode="wait">
 
                 {currentStep === "IDENTITY" && (
@@ -152,7 +157,9 @@ export function RiskProfileWizard() {
                         transition={{ duration: 0.4 }}
                     >
                         <AnalysisResult
-                            data={simulationResult}
+                            // [UPDATED] Prop disesuaikan dengan kebutuhan UI baru
+                            result={simulationResult}
+                            answerHistory={answerHistory}
                             onDownloadPdf={handleDownloadPdf}
                             onRetake={handleRetake}
                             isDownloading={isDownloading}

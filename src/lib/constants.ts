@@ -1,26 +1,15 @@
 // src/lib/constants.ts
-
-// src/lib/constants.ts
 export const APP_CONFIG = {
-<<<<<<< Updated upstream
-    API_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api",
-    // Timeout global untuk request axios (30 detik)
-=======
-    // Tambahkan /api di sini agar service tidak perlu menulisnya lagi
-    API_URL: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api`,
->>>>>>> Stashed changes
+    // Pastikan env NEXT_PUBLIC_API_URL di lokal mengarah ke http://localhost:4000/api
+    // atau gunakan fallback default di bawah ini.
+    API_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api",
     API_TIMEOUT_MS: 30000,
     APP_VERSION: 'v1.0.0',
 };
 
 export const STORAGE_KEYS = {
-    // Key Auth
     AUTH_TOKEN: 'token',
-
-    // Format Key: quiz_state_v1_{userId}_{quizId}
     QUIZ_DRAFT_PREFIX: 'quiz_state_v1_',
-
-    // Untuk menyimpan timestamp start (fallback client-side)
     QUIZ_START_TIME_SUFFIX: '_start',
 };
 

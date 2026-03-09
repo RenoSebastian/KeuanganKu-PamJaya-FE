@@ -26,7 +26,7 @@ export default function CreateUserPage() {
       fullName: "",
       nip: "",
       email: "",
-      password: "Maxipro123!",
+      password: "PamJaya123!",
       unitKerjaId: "",
       role: "USER" as "USER" | "ADMIN" | "DIRECTOR",
       jobTitle: "",
@@ -144,7 +144,7 @@ export default function CreateUserPage() {
                            <Label>Email Perusahaan</Label>
                            <Input
                               type="email"
-                              placeholder="nama@maxipro.co.id"
+                              placeholder="nama@PamJaya.co.id"
                               value={formData.email}
                               onChange={e => setFormData({ ...formData, email: e.target.value })}
                               className={cn(errors.email && "border-rose-500")}

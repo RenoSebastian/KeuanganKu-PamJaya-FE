@@ -42,7 +42,7 @@ export default function LandingPage() {
 
             <span className="text-[9px] text-slate-500 font-bold tracking-widest uppercase mt-0.5 text-center">
               Sistem Kesehatan Finansial
-            </span> 
+            </span>
           </div>
 
           {/* BUTTON */}
@@ -84,7 +84,7 @@ export default function LandingPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-25"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600"></span>
               </span>
-              Portal Resmi Karyawan MAXIPRO
+              Portal Resmi Karyawan PamJaya
             </div>
 
             <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-6 leading-[1.15] drop-shadow-sm">
@@ -95,7 +95,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-lg md:text-xl text-slate-700 mb-10 leading-relaxed font-medium">
-              Platform internal yang didedikasikan untuk membantu keluarga besar MAXIPRO merencanakan masa depan finansial yang lebih aman, terukur, dan bahagia.
+              Platform internal yang didedikasikan untuk membantu keluarga besar PamJaya merencanakan masa depan finansial yang lebih aman, terukur, dan bahagia.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -174,7 +174,7 @@ export default function LandingPage() {
                 {/* MAXIPRO */}
                 <div className="flex items-center justify-center">
                   <Image
-                    src="/images/logokeuanganku.png"
+                    src="/images/maxipro.webp"
                     alt="Logo KeuanganKu"
                     width={180}
                     height={90}
@@ -329,7 +329,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <h4 className="font-bold text-lg">Email Support</h4>
-                    <p className="text-slate-400">hc.support@maxipro.co.id</p>
+                    <p className="text-slate-400">hello@keuanganku.id</p>
                   </div>
                 </div>
               </div>

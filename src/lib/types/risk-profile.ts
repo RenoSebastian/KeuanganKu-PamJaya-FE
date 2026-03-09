@@ -35,3 +35,25 @@ export interface RiskProfileResponse {
         highRisk: number;   // Saham
     };
 }
+
+// ==========================================
+// VIEW MODELS (UI SPECIFIC TYPES)
+// ==========================================
+
+// Struktur data agregat untuk mengikat pertanyaan dan jawaban yang dipilih user
+// Digunakan murni di client-side untuk merender list jawaban di halaman hasil
+export interface RiskAnswerHistory {
+    questionId: number;
+    questionText: string;
+    selectedOptionValue: string;
+    selectedOptionLabel: string;
+}
+
+// Kontrak Props untuk komponen AnalysisResult
+// Memisahkan response API murni dengan ekstra data yang dibutuhkan UI
+export interface AnalysisResultProps {
+    result: RiskProfileResponse;
+    answerHistory: RiskAnswerHistory[];
+    // Fungsi opsional jika nanti ada kebutuhan untuk mereset kuis dari komponen hasil
+    onRetakeQuiz?: () => void;
+}
