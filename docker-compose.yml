@@ -3,20 +3,24 @@ services:
     build:
       context: .
       args:
-        # Menyuntikkan URL API HTTPS untuk build Next.js
-        - NEXT_PUBLIC_API_URL=https://keuanganku.geocitra.com
-    container_name: keuanganku-fe
+        # Gunakan subdomain pamjaya.keuanganku.id
+        - NEXT_PUBLIC_API_URL=https://pamjaya.keuanganku.id/api
+    container_name: pamjaya-fe
     restart: always
     
-    # Port 8080 tetap dibuka agar bisa diakses via IP VM jika diperlukan
-    ports:
-      - "8080:3000"
+    # Menambahkan environment PORT agar Next.js berjalan di 4002 di dalam container
+    environment:
+      - PORT=4002
+      - NODE_ENV=production
 
-    # [PENTING] Menghubungkan FE ke network yang sama dengan Nginx & BE
+    # Port Mapping terbaru dari Anda
+    ports:
+      - "3002:4002"
+
     networks:
       - e-daily-report-net
 
-    # Resource Management (Agar VM 4GB tidak OOM)
+    # Resource Management
     deploy:
       resources:
         limits:
@@ -24,7 +28,6 @@ services:
         reservations:
           memory: 256M
 
-# Definisi Jaringan External (e-daily-report_default)
 networks:
   e-daily-report-net:
     external: true

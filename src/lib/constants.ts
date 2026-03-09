@@ -2,7 +2,7 @@
 export const APP_CONFIG = {
     // Pastikan env NEXT_PUBLIC_API_URL di lokal mengarah ke http://localhost:4000/api
     // atau gunakan fallback default di bawah ini.
-    API_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api",
+    API_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4002/api",
     API_TIMEOUT_MS: 30000,
     APP_VERSION: 'v1.0.0',
 };
