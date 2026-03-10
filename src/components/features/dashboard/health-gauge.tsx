@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface HealthGaugeProps {
@@ -5,93 +9,140 @@ interface HealthGaugeProps {
 }
 
 export function HealthGauge({ score }: HealthGaugeProps) {
-  // --- KONFIGURASI VISUAL ---
-  const radius = 85;
-  const stroke = 14;
-  // Radius aman agar stroke tidak terpotong (radius luar - stroke)
-  const normalizedRadius = radius - stroke;
-  const circumference = normalizedRadius * 2 * Math.PI;
+  const [displayScore, setDisplayScore] = useState(0);
 
-  // Logic Lingkaran Penuh (360 derajat)
-  const strokeDasharray = `${circumference} ${circumference}`;
+  useEffect(() => {
+    const end = Math.round(score);
+    if (end === 0) {
+      setDisplayScore(0);
+      return;
+    }
+
+    const duration = 1500;
+    const frameRate = 1000 / 60;
+    const totalFrames = Math.round(duration / frameRate);
+    let currentFrame = 0;
+
+    const timer = setInterval(() => {
+      currentFrame++;
+      const progress = currentFrame / totalFrames;
+      const easeProgress = 1 - Math.pow(1 - progress, 4);
+      const currentVal = Math.round(end * easeProgress);
+
+      setDisplayScore(currentVal);
+
+      if (currentFrame >= totalFrames) {
+        clearInterval(timer);
+        setDisplayScore(end);
+      }
+    }, frameRate);
+
+    return () => clearInterval(timer);
+  }, [score]);
+
+  // --- KONFIGURASI VISUAL KANVAS (DIPERKECIL) ---
+  const size = 160;   // Diperkecil dari 200
+  const stroke = 12;  // Diperkecil dari 18 agar garis lebih ramping dan clean
+  const radius = (130 - stroke) / 2;
+  const circumference = radius * 2 * Math.PI;
   const strokeDashoffset = circumference - (score / 100) * circumference;
 
-  // --- LOGIKA STATUS & WARNA ---
-  let statusLabel = "BAHAYA";
-  let statusColorClass = "text-rose-500 drop-shadow-sm";
+  // --- LOGIKA STATUS & WARNA TEMA ---
+  let statusLabel = "Kritis";
+  let colorTheme = {
+    text: "text-rose-500",
+    gradientStart: "#f43f5e",
+    gradientEnd: "#9f1239",
+  };
 
   if (score >= 80) {
-    statusLabel = "SEHAT";
-    statusColorClass = "text-emerald-500 drop-shadow-sm";
+    statusLabel = "Optimal";
+    colorTheme = {
+      text: "text-emerald-500",
+      gradientStart: "#34d399",
+      gradientEnd: "#047857",
+    };
   } else if (score >= 50) {
-    statusLabel = "WASPADA";
-    statusColorClass = "text-amber-500 drop-shadow-sm";
+    statusLabel = "Waspada";
+    colorTheme = {
+      text: "text-amber-500",
+      gradientStart: "#fbbf24",
+      gradientEnd: "#b45309",
+    };
   }
 
   return (
-    // Container dibuat W-Full H-Full agar mengikuti parent (Square)
-    <div className="relative flex items-center justify-center w-full h-full group">
+    <div className="relative w-full h-full flex items-center justify-center select-none group drop-shadow-xl">
 
-      {/* SVG Container - Rotasi -90deg agar progress mulai dari jam 12 (Atas) */}
       <svg
-        height={radius * 2}
-        width={radius * 2}
-        className="transform -rotate-90 transition-all duration-700"
+        viewBox={`0 0 ${size} ${size}`}
+        className="w-full h-full transform -rotate-90 drop-shadow-lg"
         style={{ overflow: "visible" }}
       >
         <defs>
-          {/* Gradient Premium: Merah (Awal) -> Kuning (Tengah) -> Hijau (Akhir) */}
-          <linearGradient id="gaugeGradient" x1="0%" y1="100%" x2="0%" y2="0%">
-            <stop offset="0%" stopColor="#f43f5e" />   {/* Rose/Merah */}
-            <stop offset="50%" stopColor="#f59e0b" />  {/* Amber/Kuning */}
-            <stop offset="100%" stopColor="#10b981" /> {/* Emerald/Hijau */}
+          <linearGradient id={`gauge-gradient-${score}`} x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" stopColor={colorTheme.gradientStart} />
+            <stop offset="100%" stopColor={colorTheme.gradientEnd} />
           </linearGradient>
 
-          {/* Efek Glow Halus pada Bar */}
-          <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="2" result="blur" />
+          {/* Glow filter diperkecil sedikit penyebarannya */}
+          <filter id="gauge-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
         </defs>
 
-        {/* Track Background (Lingkaran Penuh Abu-abu) */}
         <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
           stroke="#f1f5f9"
           strokeWidth={stroke}
-          fill="transparent"
-          r={normalizedRadius}
-          cx={radius}
-          cy={radius}
+          fill="none"
+          className="opacity-60 transition-colors duration-500"
         />
 
-        {/* Active Progress Bar (Lingkaran Penuh) */}
-        <circle
-          stroke="url(#gaugeGradient)"
+        <motion.circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={`url(#gauge-gradient-${score})`}
           strokeWidth={stroke}
-          fill="transparent"
-          r={normalizedRadius}
-          cx={radius}
-          cy={radius}
+          fill="none"
           strokeLinecap="round"
-          filter="url(#glow)"
-          style={{
-            strokeDasharray,
-            strokeDashoffset,
-            transition: "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)" // Animasi smooth
-          }}
+          filter="url(#gauge-glow)"
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+          style={{ strokeDasharray: circumference }}
         />
       </svg>
 
-      {/* --- BAGIAN TENGAH (TEXT STATUS) --- */}
-      {/* Absolute inset-0 memastikan teks benar-benar di tengah lingkaran */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-700">
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.3, type: "spring", stiffness: 200, damping: 15 }}
+          className="flex flex-col items-center mt-1"
+        >
+          <div className="flex items-start">
+            {/* Ukuran font diperkecil dari text-6xl menjadi text-4xl/5xl */}
+            <span className={cn(
+              "text-4xl md:text-5xl font-black tracking-tighter leading-none drop-shadow-sm transition-colors duration-500",
+              colorTheme.text
+            )}>
+              {displayScore}
+            </span>
+          </div>
 
-        <h3 className={cn(
-          "text-1xl md:text-2xl font-black tracking-wider uppercase transition-colors duration-500",
-          statusColorClass
-        )}>
-          {statusLabel}
-        </h3>
+          {/* Tracking dan ukuran font label disesuaikan */}
+          <span className={cn(
+            "text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mt-1 md:mt-1.5 opacity-90 transition-colors duration-500",
+            colorTheme.text
+          )}>
+            {statusLabel}
+          </span>
+        </motion.div>
       </div>
     </div>
   );

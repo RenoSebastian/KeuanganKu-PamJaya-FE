@@ -325,7 +325,7 @@ export default function LoginPage() {
 
           <div className="space-y-1.5">
             <h1 className="text-3xl font-black text-slate-900 tracking-tighter leading-tight">Selamat Datang</h1>
-            <p className="text-slate-500 font-medium text-sm leading-relaxed max-w-[280px] mx-auto">
+            <p className="text-slate-500 font-medium text-sm leading-relaxed max-w-70 mx-auto">
               Portal Financial Wellness Karyawan
             </p>
           </div>
