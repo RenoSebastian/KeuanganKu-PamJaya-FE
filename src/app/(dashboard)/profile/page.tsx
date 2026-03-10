@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import {
   User, Calendar, Briefcase, LogOut, Save, Mail,
-  Phone, MapPin, Target, ChevronRight, Camera, Pencil, X, ShieldCheck
+  Phone, MapPin, Target, ChevronRight, Camera, Pencil, X,
+  ShieldCheck, CheckCircle2, AlertCircle, Building2, MessageCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/lib/axios";
@@ -14,75 +14,45 @@ export default function ProfilePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // State Loading & Edit
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // State Data User (Display Only / Static Info - Data Organisasi yang Immutable)
+  // --- STATE ---
   const [userData, setUserData] = useState<any>({
-    fullName: "",
-    nip: "",
-    email: "",
-    role: "",
-    unitKerja: "",
-    position: "", // [NEW] Untuk display posisi jabatan
-    joinDate: "01 Agustus 2015",
-    avatar: "",
-    goals: "",
-    noWa: "",
+    fullName: "", nip: "", email: "", role: "", unitKerja: "",
+    position: "", joinDate: "01 Agustus 2015", avatar: "", goals: "", noWa: "",
   });
 
-  // State Form Input (Editable Fields - Data Personal yang Mutable)
   const [formData, setFormData] = useState({
-    fullName: "",
-    dateOfBirth: "",
-    gender: "Laki-laki",
-    address: "",
-    noWa: "",
-    avatar: "",
-    goals: "",
+    fullName: "", dateOfBirth: "", gender: "Laki-laki",
+    address: "", noWa: "", avatar: "", goals: "",
   });
 
-  // Backup Data (Untuk fitur Cancel)
   const [backupData, setBackupData] = useState(formData);
-
-  // State Preview Image (Untuk UX instan saat upload)
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  // --- 1. FETCH DATA (GET /users/me) ---
+  // --- FETCH DATA ---
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const response = await api.get("/users/me");
         const user = response.data;
 
-        // Set Data Tampilan Static
         setUserData({
-          fullName: user.fullName || "",
-          nip: user.nip || "-",
-          email: user.email || "",
-          role: user.role || "USER",
+          fullName: user.fullName || "", nip: user.nip || "-",
+          email: user.email || "", role: user.role || "USER",
           unitKerja: user.unitKerja?.namaUnit || "Belum ada penempatan",
           position: user.position || "Belum ada posisi",
-          joinDate: "01 Agustus 2015",
-          avatar: user.avatar || "",
-          goals: user.goals || "",
-          noWa: user.noWa || "",
+          joinDate: "01 Agustus 2015", avatar: user.avatar || "",
+          goals: user.goals || "", noWa: user.noWa || "",
         });
 
-        // Format Tanggal Lahir untuk input type="date" (YYYY-MM-DD)
         const dob = user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : "";
-
-        // Set Data Form Editable
         const initialForm = {
-          fullName: user.fullName || "",
-          dateOfBirth: dob,
-          gender: user.gender || "Laki-laki",
-          address: user.address || "",
-          noWa: user.noWa || "",
-          goals: user.goals || "",
-          avatar: user.avatar || "",
+          fullName: user.fullName || "", dateOfBirth: dob,
+          gender: user.gender || "Laki-laki", address: user.address || "",
+          noWa: user.noWa || "", goals: user.goals || "", avatar: user.avatar || "",
         };
 
         setFormData(initialForm);
@@ -91,7 +61,6 @@ export default function ProfilePage() {
 
       } catch (error) {
         console.error("Gagal load profil:", error);
-        alert("Gagal memuat data profil. Silakan login ulang.");
       } finally {
         setIsLoading(false);
       }
@@ -100,70 +69,32 @@ export default function ProfilePage() {
     fetchProfile();
   }, []);
 
-  // --- 2. HANDLERS IMAGE PICKER ---
-  const handleAvatarClick = () => {
-    if (isEditing) {
-      fileInputRef.current?.click();
-    }
-  };
+  // --- HANDLERS ---
+  const handleAvatarClick = () => { if (isEditing) fileInputRef.current?.click(); };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert("Ukuran foto terlalu besar (Max 2MB)");
-        return;
-      }
-
+      if (file.size > 2 * 1024 * 1024) return alert("Ukuran foto maksimal 2MB ya!");
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setPreviewImage(base64String);
-        setFormData((prev) => ({ ...prev, avatar: base64String }));
+        setPreviewImage(reader.result as string);
+        setFormData((prev) => ({ ...prev, avatar: reader.result as string }));
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // --- 3. HANDLERS EDIT FORM ---
-  const handleStartEdit = () => {
-    setBackupData(formData);
-    setIsEditing(true);
-  };
-
-  const handleCancel = () => {
-    setFormData(backupData);
-    setPreviewImage(userData.avatar || null);
-    setIsEditing(false);
-  };
+  const handleStartEdit = () => { setBackupData(formData); setIsEditing(true); };
+  const handleCancel = () => { setFormData(backupData); setPreviewImage(userData.avatar || null); setIsEditing(false); };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // 1. Siapkan Payload (Hanya Data Personal)
-      const payload = {
-        fullName: formData.fullName,
-        dateOfBirth: formData.dateOfBirth,
-        gender: formData.gender,
-        address: formData.address,
-        noWa: formData.noWa,
-        goals: formData.goals,
-        avatar: formData.avatar,
-      };
-
-      // 2. Eksekusi API Patch
+      const payload = { ...formData };
       await api.patch("/users/me", payload);
 
-      // 3. Update Tampilan Static
-      setUserData((prev: any) => ({
-        ...prev,
-        fullName: formData.fullName,
-        avatar: formData.avatar,
-        goals: formData.goals,
-        noWa: formData.noWa,
-      }));
-
-      // 4. Sinkronisasi LocalStorage
+      setUserData((prev: any) => ({ ...prev, ...formData }));
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         const parsed = JSON.parse(storedUser);
@@ -171,364 +102,315 @@ export default function ProfilePage() {
         parsed.avatar = formData.avatar;
         localStorage.setItem("user", JSON.stringify(parsed));
       }
-
-      alert("Profil berhasil diperbarui!");
       setIsEditing(false);
-
     } catch (error) {
-      console.error("Save error details:", error);
-      alert("Gagal menyimpan perubahan. Silakan periksa koneksi Anda.");
+      alert("Gagal menyimpan perubahan. Coba lagi yuk.");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleLogout = () => {
-    if (confirm("Apakah Anda yakin ingin keluar?")) {
+    if (confirm("Yakin ingin keluar dari aplikasi?")) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       router.push("/login");
     }
   };
 
+  // UX Styling Helpers
   const inputStyle = isEditing
-    ? "bg-white border-blue-300 ring-2 ring-blue-100 shadow-sm"
-    : "bg-slate-50 border-transparent text-slate-600 cursor-not-allowed opacity-90";
+    ? "bg-white border border-cyan-300 ring-4 ring-cyan-500/10 focus:border-cyan-500 text-slate-800 shadow-sm"
+    : "bg-slate-50/50 border-transparent text-slate-600 pointer-events-none";
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-slate-500">Memuat Profil...</div>;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <div className="w-12 h-12 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin"></div>
+        <p className="mt-4 text-slate-500 font-medium text-sm animate-pulse">Menyiapkan profil Anda...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="relative w-full bg-slate-50/50 pb-36 md:pb-12 pt-4 md:pt-0">
+    <div className="min-h-screen w-full bg-slate-50/50 pb-32 font-sans selection:bg-cyan-200">
 
-      {/* Background Decorations */}
-      <div className="hidden md:block absolute top-0 left-0 w-150 h-150 bg-blue-100/40 rounded-full blur-[120px] -translate-x-1/3 -translate-y-1/3 pointer-events-none" />
-      <div className="hidden md:block absolute bottom-0 right-0 w-125 h-125 bg-purple-100/40 rounded-full blur-[100px] translate-x-1/3 translate-y-1/3 pointer-events-none" />
+      {/* --- HERO HEADER BACKGROUND --- */}
+      <div className="absolute top-0 left-0 right-0 h-70 bg-linear-to-br from-cyan-900 via-cyan-800 to-brand-800 overflow-hidden z-0 rounded-b-[3rem] shadow-lg">
+        <div className="absolute top-0 right-0 w-100 h-100 bg-white/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-75 h-75 bg-cyan-400/10 rounded-full blur-[60px] translate-y-1/3 -translate-x-1/4" />
+        <div className="absolute inset-0 bg-[url('/images/wave-pattern.svg')] opacity-[0.05] mix-blend-overlay"></div>
+      </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-10 md:pt-12">
+      {/* --- MAIN CONTENT GRID --- */}
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-20 flex flex-col md:flex-row gap-6 md:gap-10">
 
-        {/* LAYOUT GRID */}
-        <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-start">
+        {/* =========================================================
+            KOLOM KIRI: AVATAR & INFO ORGANISASI
+        ========================================================= */}
+        <div className="w-full md:w-1/3 flex flex-col gap-6">
 
-          {/* === KOLOM KIRI: PROFILE CARD & INFO === */}
-          <div className="w-full md:w-1/3 flex flex-col gap-6 md:sticky md:top-24">
+          {/* 1. KARTU AVATAR (Melayang di atas Header) */}
+          <div className="bg-white/90 backdrop-blur-2xl border border-white rounded-[2rem] p-6 shadow-xl shadow-slate-200/50 flex flex-col items-center text-center">
 
-            {/* 1. Avatar Card */}
-            <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-lg rounded-[2rem] p-6 md:p-8 flex flex-col items-center text-center relative overflow-hidden">
-              <div className="absolute top-0 w-full h-32 bg-linear-to-b from-blue-50 to-transparent -z-10" />
+            {/* Foto Profil Interaktif */}
+            <div className="relative group mb-5" onClick={handleAvatarClick}>
+              <div className={cn(
+                "w-32 h-32 rounded-full border-4 shadow-lg overflow-hidden relative transition-all duration-500",
+                isEditing ? "border-cyan-400 scale-105 cursor-pointer shadow-cyan-500/30" : "border-white bg-slate-100"
+              )}>
+                {previewImage ? (
+                  <img src={previewImage} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 bg-linear-to-br from-cyan-500 to-cyan-700 flex items-center justify-center text-5xl text-white font-bold">
+                    {formData.fullName ? formData.fullName.charAt(0).toUpperCase() : <User />}
+                  </div>
+                )}
 
-              <div className="relative group mb-4" onClick={handleAvatarClick}>
+                {/* Overlay Hitam saat Edit */}
                 <div className={cn(
-                  "w-28 h-28 md:w-32 md:h-32 rounded-full border-4 shadow-xl overflow-hidden relative transition-all duration-300",
-                  isEditing ? "border-blue-400 scale-105 cursor-pointer" : "border-white bg-slate-200"
+                  "absolute inset-0 bg-black/50 flex flex-col items-center justify-center transition-opacity duration-300",
+                  isEditing ? "opacity-100 group-hover:bg-black/60" : "opacity-0 pointer-events-none"
                 )}>
-                  {previewImage ? (
-                    <img src={previewImage} alt="Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="absolute inset-0 bg-linear-to-br from-blue-500 to-blue-700 flex items-center justify-center text-4xl md:text-5xl text-white font-bold uppercase">
-                      {formData.fullName ? formData.fullName.charAt(0) : <User />}
-                    </div>
-                  )}
-
-                  {isEditing && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center animate-in fade-in group-hover:bg-black/50 transition-colors">
-                      <Camera className="w-8 h-8 text-white" />
-                    </div>
-                  )}
-                </div>
-
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
-
-                <div className={cn(
-                  "absolute bottom-1 right-1 p-2 rounded-full border-2 border-white shadow-sm transition-colors",
-                  isEditing ? "bg-green-500 text-white" : "bg-slate-200 text-slate-500"
-                )}>
-                  {isEditing ? <Pencil className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+                  <Camera className="w-8 h-8 text-white mb-1" />
+                  <span className="text-[10px] font-bold text-white uppercase tracking-wider">Ubah Foto</span>
                 </div>
               </div>
 
-              <h2 className="text-xl md:text-2xl font-bold text-slate-800 wrap-break-word w-full">
-                {formData.fullName || "User Name"}
-              </h2>
-              <p className="text-sm text-slate-500 font-medium mt-1 flex items-center gap-1">
-                <Mail className="w-3 h-3" /> {userData.email}
-              </p>
-
-              {userData.goals && (
-                <div className="mt-4 p-3 bg-blue-50/50 rounded-xl w-full text-left border border-blue-100">
-                  <p className="text-[10px] uppercase font-bold text-blue-400 mb-1 flex items-center gap-1">
-                    <Target className="w-3 h-3" /> Goals Pribadi
-                  </p>
-                  <p className="text-xs text-slate-600 line-clamp-3 italic">
-                    "{userData.goals}"
-                  </p>
-                </div>
-              )}
-
-              {isEditing && (
-                <p className="text-[10px] text-blue-500 mt-2 font-semibold animate-pulse">Klik foto untuk mengganti</p>
-              )}
-
+              {/* Badge Centang (Visual Estetika) */}
+              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
               {!isEditing && (
-                <button
-                  onClick={handleLogout}
-                  className="mt-6 text-xs font-bold text-red-500 flex items-center gap-2 hover:bg-red-50 px-4 py-2 rounded-full transition-colors border border-transparent hover:border-red-100"
-                >
-                  <LogOut className="w-4 h-4" /> Keluar Aplikasi
-                </button>
+                <div className="absolute bottom-1 right-2 w-8 h-8 bg-emerald-500 border-4 border-white rounded-full flex items-center justify-center text-white shadow-sm">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
               )}
             </div>
 
-            {/* 2. Pegawai Info Card (Read-Only) */}
-            <div className="bg-white/60 backdrop-blur-md border border-white/60 shadow-sm rounded-3xl overflow-hidden">
-              <div className="px-5 py-3 bg-slate-100/50 border-b border-slate-200/50 flex items-center justify-between">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                  <Briefcase className="w-4 h-4" /> Informasi Organisasi
-                </h3>
-              </div>
-              <div className="divide-y divide-slate-100">
-                <InfoRow label="NPP" value={userData.nip} />
-                <InfoRow label="Posisi" value={userData.position} />
-                <InfoRow label="Unit Kerja" value={userData.unitKerja} />
+            <h2 className="text-xl font-extrabold text-slate-800 leading-tight">
+              {formData.fullName || "User Name"}
+            </h2>
+            <div className="flex items-center gap-1.5 text-slate-500 text-xs font-medium mt-1.5 bg-slate-100 px-3 py-1 rounded-full">
+              <Mail className="w-3.5 h-3.5" /> {userData.email}
+            </div>
 
-                {/* Tampilkan WhatsApp Statis di sini saat tidak mode edit */}
-                <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
-                  <span className="text-xs text-slate-500 font-semibold flex items-center gap-1">
-                    <svg className="w-3 h-3 fill-green-500" viewBox="0 0 24 24">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.63 1.438h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-                    </svg>
-                    WhatsApp
-                  </span>
-                  <span className="text-xs text-slate-800 font-bold">{userData.noWa || "-"}</span>
-                </div>
-              </div>
+            {/* Role Badge */}
+            <div className="mt-4 pt-4 border-t border-slate-100 w-full flex justify-center">
+              <span className={cn(
+                "px-4 py-1.5 rounded-xl text-xs font-extrabold uppercase tracking-widest border",
+                userData.role === 'ADMIN' ? 'bg-purple-50 text-purple-600 border-purple-200' :
+                  userData.role === 'DIRECTOR' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                    'bg-cyan-50 text-cyan-600 border-cyan-200'
+              )}>
+                {userData.role}
+              </span>
             </div>
           </div>
 
-          {/* === KOLOM KANAN: EDITABLE FORMS === */}
-          <div className="w-full md:w-2/3 space-y-6">
+          {/* 2. KARTU ORGANISASI (Hanya Baca) */}
+          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center gap-2">
+              <div className="p-1.5 bg-indigo-100 text-indigo-600 rounded-lg"><Building2 className="w-4 h-4" /></div>
+              <h3 className="text-sm font-bold text-slate-700">Data Kepegawaian</h3>
+            </div>
+            <div className="divide-y divide-slate-100/80 p-1">
+              <InfoRow label="NPP" value={userData.nip} />
+              <InfoRow label="Posisi" value={userData.position} />
+              <InfoRow label="Unit Kerja" value={userData.unitKerja} />
+            </div>
+          </div>
 
-            {/* SECTION A: Identitas Diri */}
-            <section className="animate-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-center justify-between mb-3 px-1">
-                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <div className="p-2 bg-blue-100 rounded-lg text-blue-600"><User className="w-5 h-5" /></div>
-                  Profil Pribadi
-                </h3>
-                {isEditing && (
-                  <span className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold animate-pulse border border-blue-200">
-                    Mode Edit Aktif
-                  </span>
-                )}
+          {/* Tombol Logout Ditaruh di Bawah secara mandiri */}
+          {!isEditing && (
+            <button
+              onClick={handleLogout}
+              className="group flex items-center justify-between w-full p-4 bg-white border border-rose-100 rounded-[1.5rem] shadow-sm active:scale-95 transition-all hover:bg-rose-50"
+            >
+              <span className="font-bold text-rose-600 text-sm">Keluar dari Akun</span>
+              <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center group-hover:bg-rose-600 transition-colors">
+                <LogOut className="w-4 h-4 text-rose-600 group-hover:text-white" />
               </div>
+            </button>
+          )}
+        </div>
 
-              <div className="bg-white/80 backdrop-blur-xl border border-white/60 rounded-[2rem] p-5 md:p-8 shadow-sm space-y-5">
 
-                {/* Nama Lengkap */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">Nama Lengkap</label>
-                  <input
-                    disabled={!isEditing}
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    placeholder="Masukkan nama lengkap Anda"
-                    className={cn("w-full px-5 py-3.5 rounded-2xl text-sm font-bold transition-all focus:outline-none", inputStyle)}
-                  />
+        {/* =========================================================
+            KOLOM KANAN: FORM PERSONAL & KONTAK
+        ========================================================= */}
+        <div className="w-full md:w-2/3 flex flex-col gap-6">
+
+          {/* Header Section (Desktop Only) */}
+          <div className="hidden md:flex justify-between items-end mb-2">
+            <div className="text-white">
+              <h1 className="text-3xl font-black">Detail Profil</h1>
+              <p className="text-cyan-100 text-sm mt-1">Kelola data personal dan informasi kontak Anda.</p>
+            </div>
+          </div>
+
+          {/* CONTAINER FORM BESAR */}
+          <div className="bg-white border border-slate-100 rounded-[2rem] shadow-xl shadow-slate-200/30 p-1 md:p-2 relative overflow-hidden transition-all duration-300">
+
+            {/* Animasi Glow saat Edit Mode */}
+            {isEditing && <div className="absolute inset-0 border-2 border-cyan-400 rounded-[2rem] pointer-events-none animate-pulse" />}
+
+            <div className="p-5 md:p-6 space-y-8">
+
+              {/* --- BAGIAN 1: IDENTITAS DIRI --- */}
+              <section>
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                    <User className="w-5 h-5 text-cyan-600" /> Identitas Diri
+                  </h3>
+                  {isEditing && (
+                    <span className="text-[10px] bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 animate-in fade-in">
+                      <Pencil className="w-3 h-3" /> Mengedit
+                    </span>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Nama Lengkap */}
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-xs font-bold text-slate-500 ml-1">Nama Lengkap</label>
+                    <input
+                      disabled={!isEditing} value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      className={cn("w-full px-4 h-14 rounded-xl text-base font-semibold transition-all focus:outline-none", inputStyle)}
+                    />
+                  </div>
+
                   {/* Tanggal Lahir */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">Tanggal Lahir</label>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 ml-1">Tanggal Lahir</label>
                     <div className="relative">
                       <input
-                        type="date"
-                        disabled={!isEditing}
-                        value={formData.dateOfBirth}
+                        type="date" disabled={!isEditing} value={formData.dateOfBirth}
                         onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                        className={cn("w-full px-5 py-3.5 rounded-2xl text-sm font-bold transition-all focus:outline-none", inputStyle)}
+                        className={cn("w-full px-4 h-14 rounded-xl text-base font-semibold transition-all focus:outline-none appearance-none", inputStyle)}
                       />
-                      <Calendar className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      {!isEditing && <Calendar className="w-5 h-5 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />}
                     </div>
                   </div>
 
                   {/* Jenis Kelamin */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">Jenis Kelamin</label>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 ml-1">Jenis Kelamin</label>
                     <div className="relative">
                       <select
-                        disabled={!isEditing}
-                        value={formData.gender}
+                        disabled={!isEditing} value={formData.gender}
                         onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                        className={cn("w-full px-5 py-3.5 rounded-2xl text-sm font-bold transition-all focus:outline-none appearance-none", inputStyle)}
+                        className={cn("w-full px-4 h-14 rounded-xl text-base font-semibold transition-all focus:outline-none appearance-none", inputStyle)}
                       >
                         <option value="Laki-laki">Laki-laki</option>
                         <option value="Perempuan">Perempuan</option>
                       </select>
-                      <ChevronRight className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none" />
+                      {isEditing && <ChevronRight className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none" />}
                     </div>
                   </div>
-                </div>
 
-                {/* Alamat Domisili */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">Alamat Domisili</label>
-                  <div className="relative">
+                  {/* Alamat */}
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-xs font-bold text-slate-500 ml-1">Alamat Domisili</label>
                     <textarea
-                      rows={2}
-                      disabled={!isEditing}
-                      className={cn("w-full px-5 py-3.5 rounded-2xl text-sm font-bold transition-all resize-none focus:outline-none leading-relaxed", inputStyle)}
-                      value={formData.address}
+                      rows={2} disabled={!isEditing} value={formData.address}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      placeholder="Masukkan alamat lengkap Anda saat ini"
-                    />
-                    <MapPin className={cn("w-5 h-5 absolute right-4 top-4", isEditing ? "text-slate-500" : "text-slate-400")} />
-                  </div>
-                </div>
-
-                {/* Goals / Tujuan */}
-                <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider flex items-center gap-1">
-                    <Target className="w-3.5 h-3.5" /> Goals / Tujuan Perencanaan
-                  </label>
-                  <div className="relative">
-                    <textarea
-                      rows={3}
-                      disabled={!isEditing}
-                      className={cn("w-full px-5 py-3.5 rounded-2xl text-sm font-bold transition-all resize-none focus:outline-none leading-relaxed", inputStyle)}
-                      value={formData.goals}
-                      onChange={(e) => setFormData({ ...formData, goals: e.target.value })}
-                      placeholder="Apa tujuan utama perencanaan finansial Anda tahun ini?"
+                      placeholder={isEditing ? "Masukkan alamat lengkap..." : "-"}
+                      className={cn("w-full px-4 py-3.5 rounded-xl text-sm font-semibold transition-all resize-none focus:outline-none leading-relaxed", inputStyle)}
                     />
                   </div>
                 </div>
+              </section>
 
-              </div>
-            </section>
+              <hr className="border-slate-100" />
 
-            {/* SECTION B: Informasi Kontak Lanjutan */}
-            <section className="animate-in slide-in-from-bottom-4 duration-500 delay-100">
-              <div className="flex items-center justify-between mb-3 px-1">
-                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <div className="p-2 bg-green-100 rounded-lg text-green-600"><Phone className="w-5 h-5" /></div>
-                  Informasi Kontak
+              {/* --- BAGIAN 2: KONTAK & GOALS --- */}
+              <section>
+                <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2 mb-5">
+                  <Phone className="w-5 h-5 text-cyan-600" /> Kontak & Tujuan
                 </h3>
-              </div>
-
-              <div className="bg-white/80 backdrop-blur-xl border border-white/60 rounded-[2rem] p-5 md:p-8 shadow-sm space-y-5">
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* Email - Read Only (Selalu statis dari akun) */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">Email Akun</label>
+                  {/* WhatsApp */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 ml-1">Nomor WhatsApp</label>
                     <div className="relative">
                       <input
-                        disabled={true}
-                        value={userData.email}
-                        className="w-full pl-12 pr-5 py-3.5 rounded-2xl text-sm font-bold bg-slate-100 text-slate-400 cursor-not-allowed border-transparent"
+                        type="tel" disabled={!isEditing} value={formData.noWa}
+                        onChange={(e) => setFormData({ ...formData, noWa: e.target.value })}
+                        placeholder={isEditing ? "Contoh: 08123..." : "-"}
+                        className={cn("w-full pl-12 pr-4 h-14 rounded-xl text-base font-semibold transition-all focus:outline-none", inputStyle)}
                       />
-                      <Mail className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <MessageCircle className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500" />
                     </div>
                   </div>
 
-                  {/* WhatsApp - Editable */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider flex items-center gap-1">
-                      Nomor WhatsApp
+                  {/* Goals / Tujuan */}
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-xs font-bold text-slate-500 ml-1 flex items-center gap-1">
+                      Target / Financial Goals
                     </label>
-                    <div className="relative">
-                      <input
-                        type="tel"
-                        disabled={!isEditing}
-                        value={formData.noWa}
-                        onChange={(e) => setFormData({ ...formData, noWa: e.target.value })}
-                        placeholder="Contoh: 08123456789"
-                        className={cn("w-full pl-12 pr-5 py-3.5 rounded-2xl text-sm font-bold transition-all focus:outline-none", inputStyle)}
-                      />
-                      <Phone className={cn("w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2", isEditing ? "text-slate-500" : "text-slate-400")} />
-                    </div>
+                    <textarea
+                      rows={3} disabled={!isEditing} value={formData.goals}
+                      onChange={(e) => setFormData({ ...formData, goals: e.target.value })}
+                      placeholder={isEditing ? "Apa tujuan keuangan Anda tahun ini?" : "Belum ada target yang diatur."}
+                      className={cn("w-full px-4 py-3.5 rounded-xl text-sm font-semibold transition-all resize-none focus:outline-none leading-relaxed",
+                        isEditing ? inputStyle : "bg-cyan-50/50 border-cyan-100 text-cyan-800 italic"
+                      )}
+                    />
                   </div>
                 </div>
+              </section>
 
-              </div>
-            </section>
-          </div>
+            </div>
 
-          {/* FLOATING ACTION BUTTONS */}
-          <div className={cn(
-            "transition-all duration-300",
-            "fixed bottom-24 left-5 right-5 z-50 md:static md:mt-10 md:p-0"
-          )}>
-            {!isEditing ? (
-              <Button
-                w-full
-                variant="outline"
-                size="lg"
-                onClick={handleStartEdit}
-                className="bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 shadow-xl shadow-slate-200/50 rounded-2xl h-14 md:h-12 text-sm font-bold backdrop-blur-md transition-all active:scale-95"
-              >
-                <Pencil className="w-4 h-4 mr-2" /> Ubah Data Profil
-              </Button>
-            ) : (
-              <div className="flex gap-3 animate-in fade-in zoom-in-95 duration-300">
-                <Button
-                  w-full
-                  variant="secondary"
-                  size="lg"
-                  onClick={handleCancel}
-                  disabled={isSaving}
-                  className="bg-white/90 backdrop-blur-md text-red-600 border border-red-100 hover:bg-red-50 rounded-2xl h-14 md:h-12 text-sm font-bold shadow-lg"
+            {/* =========================================================
+                AREA TOMBOL AKSI (Selalu nempel di bawah form)
+            ========================================================= */}
+            <div className="p-4 md:p-6 bg-slate-50/80 border-t border-slate-100 rounded-b-[2rem]">
+              {!isEditing ? (
+                <button
+                  onClick={handleStartEdit}
+                  className="w-full flex items-center justify-center gap-2 h-14 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl shadow-sm hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-200 transition-all active:scale-95"
                 >
-                  <X className="w-5 h-5 mr-2" /> Batal
-                </Button>
+                  <Pencil className="w-4 h-4" /> Ubah Data Profil
+                </button>
+              ) : (
+                <div className="flex flex-col-reverse sm:flex-row gap-3 animate-in slide-in-from-bottom-2 duration-300">
+                  <button
+                    onClick={handleCancel} disabled={isSaving}
+                    className="w-full sm:w-1/3 h-14 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <X className="w-5 h-5" /> Batal
+                  </button>
+                  <button
+                    onClick={handleSave} disabled={isSaving}
+                    className="w-full sm:w-2/3 h-14 bg-cyan-600 text-white font-bold rounded-xl hover:bg-cyan-500 shadow-lg shadow-cyan-600/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    {isSaving ? (
+                      <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
+                    ) : (
+                      <><Save className="w-5 h-5" /> Simpan Perubahan</>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
 
-                <Button
-                  w-full
-                  variant="default"
-                  size="lg"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-300/50 rounded-2xl h-14 md:h-12 text-sm font-bold flex-2 transition-all active:scale-95"
-                >
-                  {isSaving ? (
-                    <span className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Menyimpan...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Save className="w-5 h-5" /> Simpan Perubahan
-                    </span>
-                  )}
-                </Button>
-              </div>
-            )}
           </div>
-
         </div>
       </div>
     </div>
   );
 }
 
-/**
- * InfoRow Component
- * Digunakan untuk menampilkan data statis di Kolom Kiri (Profile Card)
- */
+// Sub-komponen untuk menampilkan Row Data
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors group border-b border-slate-100/50 last:border-0">
-      <span className="text-xs text-slate-500 font-semibold group-hover:text-slate-600 transition-colors">
+    <div className="flex justify-between items-center px-5 py-3.5 hover:bg-slate-50 transition-colors group">
+      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-slate-500 transition-colors">
         {label}
       </span>
-      <span className="text-xs text-slate-800 font-bold break-all ml-4 text-right uppercase tracking-tight">
+      <span className="text-xs font-extrabold text-slate-700 text-right w-2/3 truncate">
         {value || "-"}
       </span>
     </div>

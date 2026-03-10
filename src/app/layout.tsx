@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0056b3",
+  themeColor: "#0891b2", // Disesuaikan dengan cyan-600 agar PWA header nyambung
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -32,13 +32,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
-      {/* REVISI: 
-          1. Hapus 'overflow-hidden' agar bisa scroll lagi.
-          2. Hapus 'h-[100dvh]' ganti jadi 'min-h-screen' (standar web).
-          3. Hapus 'w-screen' (biarkan default width auto).
-      */}
-      <body className={`${inter.className} bg-slate-50 text-slate-900 antialiased min-h-screen overscroll-none`}>
+    <html lang="id" className="scroll-smooth">
+      <body
+        className={`${inter.className} bg-slate-50 text-slate-900 antialiased min-h-screen overscroll-none selection:bg-cyan-200 selection:text-cyan-900`}
+      >
         {children}
       </body>
     </html>

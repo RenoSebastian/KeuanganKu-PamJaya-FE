@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
    ArrowLeft, Save, UserPlus,
    Building2, Calendar,
-   User, Loader2, Briefcase
+   User, Loader2, Briefcase, Mail, CheckCircle2, AlertCircle
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,16 +21,15 @@ export default function CreateUserPage() {
    const [loading, setLoading] = useState(false);
    const [units, setUnits] = useState<UnitKerja[]>([]);
 
-   // Form State (Disinkronkan dengan Schema Master Data PAM Jaya)
    const [formData, setFormData] = useState({
       fullName: "",
-      nip: "", // Di UI menggunakan label NPP
+      nip: "",
       email: "",
       password: "PamJaya123!",
       unitKerjaId: "",
       role: "USER" as "USER" | "ADMIN" | "DIRECTOR",
       dateOfBirth: "",
-      position: "", // Mengakomodasi kolom "POSISI" dari file Excel
+      position: "",
    });
 
    const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,20 +40,21 @@ export default function CreateUserPage() {
             const data = await masterDataService.getAllUnits();
             setUnits(data);
          } catch (error) {
-            toast.error("Gagal memuat daftar unit kerja");
+            toast.error("Waduh, gagal memuat daftar unit kerja nih.");
          }
       };
       fetchUnits();
    }, []);
 
+   // Validasi dengan copywriting yang humanis
    const validate = () => {
       const newErrors: Record<string, string> = {};
-      if (!formData.fullName) newErrors.fullName = "Nama Lengkap wajib diisi";
-      if (!formData.nip) newErrors.nip = "NPP wajib diisi";
-      if (!formData.email) newErrors.email = "Email wajib diisi";
-      if (!formData.unitKerjaId) newErrors.unitKerjaId = "Unit Kerja wajib dipilih";
-      if (!formData.dateOfBirth) newErrors.dateOfBirth = "Tanggal Lahir wajib diisi";
-      if (!formData.position) newErrors.position = "Posisi wajib diisi";
+      if (!formData.fullName) newErrors.fullName = "Hmm, nama lengkapnya belum diisi nih.";
+      if (!formData.nip) newErrors.nip = "NPP wajib diisi ya.";
+      if (!formData.email) newErrors.email = "Jangan lupa isi email perusahaan.";
+      if (!formData.unitKerjaId) newErrors.unitKerjaId = "Pilih dulu penempatan unit kerjanya.";
+      if (!formData.dateOfBirth) newErrors.dateOfBirth = "Tanggal lahirnya kelupaan.";
+      if (!formData.position) newErrors.position = "Posisi pekerjaannya apa nih?";
 
       setErrors(newErrors);
       return Object.keys(newErrors).length === 0;
@@ -63,7 +63,7 @@ export default function CreateUserPage() {
    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!validate()) {
-         toast.warning("Mohon lengkapi data yang wajib diisi");
+         toast.error("Ada beberapa data yang belum lengkap. Cek lagi ya!");
          return;
       }
 
@@ -71,11 +71,11 @@ export default function CreateUserPage() {
 
       try {
          await adminService.createUser(formData);
-         toast.success(`User ${formData.fullName} berhasil didaftarkan!`);
+         toast.success(`Yey! Pegawai ${formData.fullName} berhasil didaftarkan 🎉`);
          router.push("/admin/users");
       } catch (error: any) {
          console.error(error);
-         const msg = error.response?.data?.message || "Gagal menyimpan user";
+         const msg = error.response?.data?.message || "Gagal menyimpan data pegawai. Coba lagi yuk.";
          const displayMsg = Array.isArray(msg) ? msg[0] : msg;
          toast.error(displayMsg);
       } finally {
@@ -83,151 +83,216 @@ export default function CreateUserPage() {
       }
    };
 
+   // Helper untuk styling role card
+   const roleDetails = {
+      USER: { title: "Pegawai Biasa", desc: "Akses standar untuk pekerjaan harian", color: "text-cyan-600", bg: "bg-cyan-50", border: "border-cyan-500" },
+      DIRECTOR: { title: "Direktur", desc: "Akses pantau laporan eksekutif", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-500" },
+      ADMIN: { title: "Administrator", desc: "Akses penuh kelola sistem & user", color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-500" },
+   };
+
    return (
-      <div className="min-h-screen w-full bg-surface-ground pb-24 md:pb-12">
-         <div className="bg-brand-900 pt-10 pb-32 px-5 relative overflow-hidden shadow-2xl">
-            <div className="absolute top-0 right-0 w-125 h-125 bg-brand-500/10 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-[80px] pointer-events-none" />
-            <div className="relative z-10 max-w-4xl mx-auto">
-               <Button variant="ghost" className="text-brand-100 hover:text-white hover:bg-brand-800 mb-6 pl-0 gap-2" onClick={() => router.back()}>
-                  <ArrowLeft className="w-5 h-5" /> Kembali ke Daftar
+      <div className="min-h-screen w-full bg-slate-50/50 pb-24 md:pb-12 font-sans selection:bg-cyan-200">
+
+         {/* --- HEADER --- */}
+         <div className="bg-linear-to-br from-brand-900 via-brand-800 to-cyan-900 pt-8 pb-36 px-5 relative overflow-hidden shadow-sm">
+            <div className="absolute top-0 right-0 w-100 h-100 bg-brand-500/20 rounded-full blur-[100px] pointer-events-none animate-pulse duration-3000" />
+            <div className="absolute bottom-0 left-0 w-75 h-75 bg-cyan-400/20 rounded-full blur-[80px] pointer-events-none" />
+            <div className="absolute inset-0 bg-[url('/images/wave-pattern.svg')] opacity-[0.08] mix-blend-overlay"></div>
+
+            <div className="relative z-10 max-w-4xl mx-auto animate-in fade-in slide-in-from-top-4 duration-700">
+               {/* Tombol Back yang elegan di mobile & desktop */}
+               <Button
+                  variant="ghost"
+                  className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/10 mb-8 rounded-full px-4 h-10 gap-2 transition-all active:scale-95"
+                  onClick={() => router.back()}
+               >
+                  <ArrowLeft className="w-4 h-4" /> <span className="text-sm font-medium">Kembali</span>
                </Button>
-               <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg text-white border border-white/20">
-                     <UserPlus className="w-7 h-7" />
+
+               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                  <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-inner border border-white/20 text-cyan-300">
+                     <UserPlus className="w-8 h-8" />
                   </div>
                   <div className="text-white">
-                     <h1 className="text-2xl md:text-3xl font-black tracking-tight">Registrasi Karyawan</h1>
-                     <p className="text-brand-100 text-sm opacity-90 mt-1">Tambahkan akun pegawai baru ke dalam sistem PAM Jaya.</p>
+                     <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Registrasi Pegawai</h1>
+                     <p className="text-cyan-100/80 text-sm md:text-base mt-1.5 max-w-lg leading-relaxed">
+                        Tambahkan akun teman baru agar bisa mengakses sistem perusahaan kita.
+                     </p>
                   </div>
                </div>
             </div>
          </div>
 
-         <div className="relative z-20 max-w-4xl mx-auto px-5 -mt-20">
-            <Card className="p-6 md:p-8 rounded-[1.5rem] shadow-xl border-white/60 bg-white/95 backdrop-blur-xl">
-               <form onSubmit={handleSubmit} className="space-y-8">
+         {/* --- MAIN CONTENT (FORM) --- */}
+         <div className="relative z-20 max-w-4xl mx-auto px-4 sm:px-5 -mt-20">
+            <Card className="p-6 md:p-10 rounded-[2rem] shadow-xl shadow-slate-200/40 border-slate-100 bg-white/95 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150">
+               <form onSubmit={handleSubmit} className="space-y-10">
 
                   {/* SECTION 1: IDENTITAS PEGAWAI */}
-                  <div className="space-y-5">
-                     <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-                        <div className="p-2 bg-brand-50 rounded-lg text-brand-600"><User className="w-5 h-5" /></div>
-                        <h3 className="font-bold text-slate-800 text-lg">Identitas Pegawai</h3>
+                  <div className="space-y-6">
+                     <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                        <div className="p-2.5 bg-brand-50 rounded-xl text-brand-600"><User className="w-5 h-5" /></div>
+                        <div>
+                           <h3 className="font-bold text-slate-800 text-lg">Data Diri Pegawai</h3>
+                           <p className="text-xs text-slate-500">Informasi personal sesuai identitas.</p>
+                        </div>
                      </div>
 
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                           <Label>Nama Lengkap <span className="text-rose-500">*</span></Label>
+                        <div className="space-y-2.5">
+                           <Label className="text-slate-700 font-semibold ml-1">Nama Lengkap <span className="text-rose-500">*</span></Label>
                            <Input
                               placeholder="Contoh: Maghfira Dwi Puspita"
                               value={formData.fullName}
                               onChange={e => setFormData({ ...formData, fullName: e.target.value })}
-                              className={cn(errors.fullName && "border-rose-500")}
+                              className={cn("h-14 rounded-xl px-4 bg-slate-50/50 focus:bg-white transition-all text-base", errors.fullName && "border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-rose-500/20")}
                            />
-                           {errors.fullName && <p className="text-[10px] text-rose-500 font-bold">{errors.fullName}</p>}
+                           {errors.fullName && <p className="text-xs text-rose-500 flex items-center gap-1 mt-1 ml-1"><AlertCircle className="w-3 h-3" /> {errors.fullName}</p>}
                         </div>
 
-                        <div className="space-y-2">
-                           <Label>NPP <span className="text-rose-500">*</span></Label>
+                        <div className="space-y-2.5">
+                           <Label className="text-slate-700 font-semibold ml-1">NPP (Nomor Induk) <span className="text-rose-500">*</span></Label>
                            <Input
                               placeholder="Contoh: 502633"
                               value={formData.nip}
                               onChange={e => setFormData({ ...formData, nip: e.target.value })}
-                              className={cn("font-mono", errors.nip && "border-rose-500")}
+                              className={cn("h-14 rounded-xl px-4 bg-slate-50/50 focus:bg-white transition-all text-base font-mono", errors.nip && "border-rose-400 bg-rose-50/30")}
                            />
-                           {errors.nip && <p className="text-[10px] text-rose-500 font-bold">{errors.nip}</p>}
+                           {errors.nip && <p className="text-xs text-rose-500 flex items-center gap-1 mt-1 ml-1"><AlertCircle className="w-3 h-3" /> {errors.nip}</p>}
                         </div>
 
-                        <div className="space-y-2">
-                           <Label>Email Perusahaan <span className="text-rose-500">*</span></Label>
-                           <Input
-                              type="email"
-                              placeholder="nama@pamjaya.co.id"
-                              value={formData.email}
-                              onChange={e => setFormData({ ...formData, email: e.target.value })}
-                              className={cn(errors.email && "border-rose-500")}
-                           />
-                           {errors.email && <p className="text-[10px] text-rose-500 font-bold">{errors.email}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                           <Label>Tanggal Lahir <span className="text-rose-500">*</span></Label>
+                        <div className="space-y-2.5">
+                           <Label className="text-slate-700 font-semibold ml-1">Email Perusahaan <span className="text-rose-500">*</span></Label>
                            <div className="relative">
-                              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                              <Input
+                                 type="email"
+                                 placeholder="nama@pamjaya.co.id"
+                                 value={formData.email}
+                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                 className={cn("pl-11 h-14 rounded-xl bg-slate-50/50 focus:bg-white transition-all text-base", errors.email && "border-rose-400 bg-rose-50/30")}
+                              />
+                           </div>
+                           {errors.email && <p className="text-xs text-rose-500 flex items-center gap-1 mt-1 ml-1"><AlertCircle className="w-3 h-3" /> {errors.email}</p>}
+                        </div>
+
+                        <div className="space-y-2.5">
+                           <Label className="text-slate-700 font-semibold ml-1">Tanggal Lahir <span className="text-rose-500">*</span></Label>
+                           <div className="relative">
+                              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                               <Input
                                  type="date"
                                  value={formData.dateOfBirth}
                                  onChange={e => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                                 className={cn("pl-10 block", errors.dateOfBirth && "border-rose-500")}
+                                 className={cn("pl-11 block h-14 rounded-xl bg-slate-50/50 focus:bg-white transition-all text-base", errors.dateOfBirth && "border-rose-400 bg-rose-50/30")}
                               />
                            </div>
-                           {errors.dateOfBirth && <p className="text-[10px] text-rose-500 font-bold">{errors.dateOfBirth}</p>}
+                           {errors.dateOfBirth && <p className="text-xs text-rose-500 flex items-center gap-1 mt-1 ml-1"><AlertCircle className="w-3 h-3" /> {errors.dateOfBirth}</p>}
                         </div>
                      </div>
                   </div>
 
-                  {/* SECTION 2: STRUKTUR ORGANISASI */}
-                  <div className="space-y-5">
-                     <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-                        <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Building2 className="w-5 h-5" /></div>
-                        <h3 className="font-bold text-slate-800 text-lg">Organisasi & Penempatan</h3>
+                  {/* SECTION 2: STRUKTUR ORGANISASI & ROLE */}
+                  <div className="space-y-6">
+                     <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                        <div className="p-2.5 bg-indigo-50 rounded-xl text-indigo-600"><Building2 className="w-5 h-5" /></div>
+                        <div>
+                           <h3 className="font-bold text-slate-800 text-lg">Organisasi & Hak Akses</h3>
+                           <p className="text-xs text-slate-500">Penempatan posisi dan peran di dalam sistem.</p>
+                        </div>
                      </div>
 
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-3">
-                           <Label>Direktorat / Divisi / Sub Divisi <span className="text-rose-500">*</span></Label>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2.5">
+                           <Label className="text-slate-700 font-semibold ml-1">Penempatan Unit Kerja <span className="text-rose-500">*</span></Label>
                            <select
-                              className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm", errors.unitKerjaId && "border-rose-500")}
+                              className={cn(
+                                 "flex h-14 w-full rounded-xl border border-input bg-slate-50/50 focus:bg-white px-4 py-2 text-base transition-all",
+                                 errors.unitKerjaId && "border-rose-400 bg-rose-50/30 focus:border-rose-500",
+                                 !formData.unitKerjaId && "text-slate-400"
+                              )}
                               value={formData.unitKerjaId}
                               onChange={e => setFormData({ ...formData, unitKerjaId: e.target.value })}
                            >
-                              <option value="">-- Pilih Penempatan --</option>
+                              <option value="" disabled>-- Pilih Penempatan --</option>
                               {units.map(unit => (
-                                 <option key={unit.id} value={unit.id}>{unit.namaUnit} ({unit.kodeUnit})</option>
+                                 <option key={unit.id} value={unit.id} className="text-slate-800">
+                                    {unit.namaUnit} ({unit.kodeUnit})
+                                 </option>
                               ))}
                            </select>
-                           {errors.unitKerjaId && <p className="text-[10px] text-rose-500 font-bold">{errors.unitKerjaId}</p>}
+                           {errors.unitKerjaId && <p className="text-xs text-rose-500 flex items-center gap-1 mt-1 ml-1"><AlertCircle className="w-3 h-3" /> {errors.unitKerjaId}</p>}
                         </div>
 
-                        <div className="space-y-3">
-                           <Label>Posisi Pekerjaan <span className="text-rose-500">*</span></Label>
+                        <div className="space-y-2.5">
+                           <Label className="text-slate-700 font-semibold ml-1">Posisi / Jabatan <span className="text-rose-500">*</span></Label>
                            <div className="relative">
-                              <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                              <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                               <Input
                                  placeholder="Contoh: Tax Leader (Plt.)"
                                  value={formData.position}
                                  onChange={e => setFormData({ ...formData, position: e.target.value })}
-                                 className={cn("pl-9", errors.position && "border-rose-500")}
+                                 className={cn("pl-11 h-14 rounded-xl bg-slate-50/50 focus:bg-white transition-all text-base", errors.position && "border-rose-400 bg-rose-50/30")}
                               />
                            </div>
-                           {errors.position && <p className="text-[10px] text-rose-500 font-bold">{errors.position}</p>}
+                           {errors.position && <p className="text-xs text-rose-500 flex items-center gap-1 mt-1 ml-1"><AlertCircle className="w-3 h-3" /> {errors.position}</p>}
                         </div>
 
-                        <div className="space-y-3 md:col-span-2">
-                           <Label>Role Sistem (Hak Akses) <span className="text-rose-500">*</span></Label>
-                           <div className="grid grid-cols-3 gap-2">
-                              {["USER", "DIRECTOR", "ADMIN"].map((role) => (
-                                 <button
-                                    key={role}
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, role: role as any })}
-                                    className={cn(
-                                       "text-xs font-bold py-2 px-2 rounded-md border transition-all",
-                                       formData.role === role ? "bg-brand-600 text-white" : "bg-white text-slate-500 hover:bg-slate-50"
-                                    )}
-                                 >
-                                    {role}
-                                 </button>
-                              ))}
+                        {/* ROLE SELECTOR (PWA Friendly & Visual) */}
+                        <div className="space-y-3 md:col-span-2 mt-2">
+                           <Label className="text-slate-700 font-semibold ml-1">Peran di Sistem (Hak Akses) <span className="text-rose-500">*</span></Label>
+                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              {(["USER", "DIRECTOR", "ADMIN"] as const).map((role) => {
+                                 const isSelected = formData.role === role;
+                                 const meta = roleDetails[role];
+                                 return (
+                                    <div
+                                       key={role}
+                                       onClick={() => setFormData({ ...formData, role })}
+                                       className={cn(
+                                          "relative flex flex-col p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 active:scale-95",
+                                          isSelected ? `${meta.bg} ${meta.border} shadow-sm` : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50"
+                                       )}
+                                    >
+                                       {isSelected && (
+                                          <div className={`absolute top-3 right-3 ${meta.color}`}>
+                                             <CheckCircle2 className="w-5 h-5" />
+                                          </div>
+                                       )}
+                                       <span className={cn("font-bold text-sm", isSelected ? meta.color : "text-slate-700")}>
+                                          {meta.title}
+                                       </span>
+                                       <span className="text-xs text-slate-500 mt-1 pr-6 leading-relaxed">
+                                          {meta.desc}
+                                       </span>
+                                    </div>
+                                 );
+                              })}
                            </div>
                         </div>
                      </div>
                   </div>
 
-                  <div className="pt-4 flex gap-3 border-t border-slate-100 mt-6">
-                     <Button type="button" variant="outline" className="flex-1" onClick={() => router.back()}>Batal</Button>
-                     <Button type="submit" disabled={loading} className="flex-2 bg-emerald-600 hover:bg-emerald-700">
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />} Simpan Pegawai
+                  {/* --- ACTION BUTTONS --- */}
+                  <div className="pt-6 flex flex-col-reverse sm:flex-row gap-4 border-t border-slate-100 mt-8">
+                     <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full sm:w-1/3 h-14 rounded-xl font-semibold border-slate-200 text-slate-600 hover:bg-slate-50 transition-all active:scale-95 text-base"
+                        onClick={() => router.back()}
+                     >
+                        Batal
+                     </Button>
+                     <Button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full sm:w-2/3 h-14 rounded-xl font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-600/20 transition-all active:scale-95 text-base"
+                     >
+                        {loading ? (
+                           <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Menyimpan Data...</>
+                        ) : (
+                           <><Save className="w-5 h-5 mr-2" /> Simpan Pegawai Baru</>
+                        )}
                      </Button>
                   </div>
                </form>
