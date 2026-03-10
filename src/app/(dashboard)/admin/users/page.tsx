@@ -42,7 +42,7 @@ export default function AdminUsersPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // 2. Fetch Data (Kebal terhadap perubahan arsitektur Backend)
+  // 2. Fetch Data (Dengan Client-Side Slicing Logic yang Benar)
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
@@ -52,14 +52,27 @@ export default function AdminUsersPage() {
         limit: itemsPerPage
       });
 
-      // [FIX] Cek apakah response berupa Array mentah atau Object Pagination
+      // [FIX LOGIC] Cek apakah response berupa Array mentah
       if (Array.isArray(response)) {
-        // Fallback jika backend masih mengembalikan Array mentah
-        setUsers(response);
-        setTotalPages(1); // Set ke 1 karena tidak ada metadata
-        setTotalItems(response.length);
+
+        // 1. Hitung total semua data mentah
+        const totalData = response.length;
+
+        // 2. Hitung total halaman (Misal: 32 data / 10 = 4 halaman)
+        const calculatedTotalPages = Math.ceil(totalData / itemsPerPage) || 1;
+
+        // 3. POTONG DATA (Slicing) sesuai halaman saat ini
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedData = response.slice(startIndex, endIndex);
+
+        // 4. Masukkan data yang sudah dipotong ke state
+        setUsers(paginatedData);
+        setTotalPages(calculatedTotalPages);
+        setTotalItems(totalData);
+
       } else if (response && response.data) {
-        // Jika backend sudah mengembalikan Object Pagination
+        // Jika Backend sudah dikoding ulang untuk mereturn Object Pagination
         setUsers(response.data);
         setTotalPages(response.totalPages || 1);
         setTotalItems(response.totalItems || response.data.length);
@@ -77,7 +90,7 @@ export default function AdminUsersPage() {
       setIsLoading(false);
     }
   };
-
+  
   useEffect(() => {
     fetchUsers();
   }, [debouncedSearch, currentPage]);
