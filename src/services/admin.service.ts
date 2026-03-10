@@ -1,4 +1,5 @@
 import api from '@/lib/axios';
+import { BulkImportResponse } from '@/lib/types'; // [NEW FASE 1] Import kontrak tipe data Import
 
 // Tipe Data User sesuai response Backend terbaru
 export interface User {
@@ -28,7 +29,8 @@ export interface CreateUserPayload {
     unitKerjaId: string; // [REQUIRED] ID dari dropdown Master Data
 
     // Opsional
-    jobTitle?: string;
+    position?: string; // Sesuai arsitektur PAM Jaya
+    jobTitle?: string; // Dipertahankan untuk backward compatibility
     dateOfBirth?: string; // Format: YYYY-MM-DD
     dependentCount?: number;
 }
@@ -63,6 +65,25 @@ export const adminService = {
     // Delete User (Admin Only)
     deleteUser: async (id: string) => {
         const response = await api.delete<{ message: string; id: string }>(`/users/${id}`);
+        return response.data;
+    },
+
+    // ============================================================================
+    // [NEW FASE 1] BULK IMPORT USERS
+    // Endpoint khusus untuk memproses file Excel secara massal menggunakan FormData
+    // ============================================================================
+    bulkImportUsers: async (file: File): Promise<BulkImportResponse> => {
+        // 1. Bungkus file fisik ke dalam FormData
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // 2. Eksekusi POST request dengan header Multipart
+        const response = await api.post<BulkImportResponse>('/users/bulk-import', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
         return response.data;
     },
 };

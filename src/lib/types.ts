@@ -576,8 +576,12 @@ export interface User {
 }
 
 export interface AuthResponse {
-  access_token: string;
-  user: User;
+  access_token?: string; // Menjadi optional karena bisa return requirePasswordChange
+  user?: User;
+  // Penambahan untuk Force Change Password
+  requirePasswordChange?: boolean;
+  userId?: string;
+  message?: string;
 }
 
 // ============================================================================
@@ -618,6 +622,21 @@ export interface HelpContent {
   example?: string;    // Contoh konkret angka/kasus
 }
 
-// // [NEW] Education Module Types
-// export * from './types/education';
-// export * from './types/retention'; // Jika belum ada
+// ============================================================================
+// 10. BULK IMPORT TYPES (FASE IMPORT EXCEL)
+// ============================================================================
+
+export interface ImportErrorDetail {
+  row: number;
+  npp: string;
+  name: string;
+  reason: string;
+}
+
+export interface BulkImportResponse {
+  totalProcessed: number;
+  insertedCount: number;
+  updatedCount: number;
+  failedCount: number;
+  errors: ImportErrorDetail[];
+}

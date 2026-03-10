@@ -5,7 +5,8 @@ import Link from "next/link";
 import {
   Search, Plus, Pencil, Trash2,
   User as UserIcon, Building2,
-  Loader2, AlertCircle, IdCard, Mail
+  Loader2, AlertCircle, IdCard, Mail,
+  UploadCloud // [NEW FASE 4] Tambah icon Upload
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,12 +14,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { adminService, User } from "@/services/admin.service";
 import { toast } from "sonner";
+import { BulkImportModal } from "@/components/features/admin/users/bulk-import-modal"; // [NEW FASE 4] Import komponen modal
 
 export default function AdminUsersPage() {
   // --- STATE ---
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
+
+  // [NEW FASE 4] State untuk mengontrol visibilitas Modal Import
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Debounce search agar tidak spam API setiap ketik huruf (delay 500ms)
   const [debouncedSearch, setDebouncedSearch] = useState(search);
@@ -85,11 +90,21 @@ export default function AdminUsersPage() {
             </p>
           </div>
 
-          <Link href="/admin/users/create">
-            <Button className="bg-cyan-500 hover:bg-cyan-400 text-white shadow-xl shadow-brand-900/20 font-bold border border-cyan-400/20">
-              <Plus className="w-4 h-4 mr-2" /> Tambah Pegawai
+          {/* [NEW FASE 4] Modifikasi Container Tombol Aksi */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+            <Button
+              onClick={() => setIsImportModalOpen(true)}
+              className="bg-white/10 hover:bg-white/20 text-white shadow-xl backdrop-blur-md border border-white/20 font-bold transition-all w-full sm:w-auto"
+            >
+              <UploadCloud className="w-4 h-4 mr-2" /> Import Excel
             </Button>
-          </Link>
+
+            <Link href="/admin/users/create" className="w-full sm:w-auto">
+              <Button className="bg-cyan-500 hover:bg-cyan-400 text-white shadow-xl shadow-brand-900/20 font-bold border border-cyan-400/20 w-full transition-all">
+                <Plus className="w-4 h-4 mr-2" /> Tambah Pegawai
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -100,7 +115,7 @@ export default function AdminUsersPage() {
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <Input
-              placeholder="Cari berdasarkan Nama atau NIP..."
+              placeholder="Cari berdasarkan Nama atau NPP..."
               className="pl-12 h-12 bg-slate-50 border-slate-200 focus:border-brand-500 focus:bg-white rounded-xl text-sm font-medium transition-all"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -115,8 +130,8 @@ export default function AdminUsersPage() {
               <thead className="text-xs text-slate-500 uppercase bg-slate-50/80 border-b border-slate-100">
                 <tr>
                   <th className="px-6 py-5 font-bold">Info Pegawai</th>
-                  <th className="px-6 py-5 font-bold">NIP</th>
-                  <th className="px-6 py-5 font-bold">Unit Kerja</th>
+                  <th className="px-6 py-5 font-bold">NPP</th>
+                  <th className="px-6 py-5 font-bold">Unit Kerja & Posisi</th>
                   <th className="px-6 py-5 font-bold">Role Akses</th>
                   <th className="px-6 py-5 font-bold text-right">Aksi</th>
                 </tr>
@@ -150,7 +165,7 @@ export default function AdminUsersPage() {
                         </div>
                       </td>
 
-                      {/* 2. NIP */}
+                      {/* 2. NPP */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <IdCard className="w-4 h-4 text-slate-400" />
@@ -160,12 +175,17 @@ export default function AdminUsersPage() {
                         </div>
                       </td>
 
-                      {/* 3. UNIT KERJA */}
+                      {/* 3. UNIT KERJA & POSISI */}
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-slate-400" />
-                          <span className="font-medium text-slate-700">
-                            {user.unitKerja?.namaUnit || <span className="text-rose-500 italic text-xs">Belum di-assign</span>}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+                            <span className="font-bold text-slate-700 text-xs">
+                              {user.unitKerja?.namaUnit || <span className="text-rose-500 italic">Belum di-assign</span>}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-medium text-slate-500 ml-6 uppercase tracking-wider">
+                            {user.position || "-"}
                           </span>
                         </div>
                       </td>
@@ -220,7 +240,7 @@ export default function AdminUsersPage() {
                         </div>
                         <div>
                           <p className="text-slate-900 font-bold">Data tidak ditemukan</p>
-                          <p className="text-slate-500 text-xs">Coba kata kunci lain atau tambah pegawai baru.</p>
+                          <p className="text-slate-500 text-xs">Coba kata kunci lain atau import pegawai baru.</p>
                         </div>
                       </div>
                     </td>
@@ -231,6 +251,14 @@ export default function AdminUsersPage() {
           </div>
         </Card>
       </div>
+
+      {/* [NEW FASE 4] Pemasangan Modal Import di root komponen halaman */}
+      <BulkImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={fetchUsers}
+      />
+
     </div>
   );
 }

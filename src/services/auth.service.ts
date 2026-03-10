@@ -2,11 +2,20 @@ import api from "@/lib/axios";
 import { LoginDto, RegisterDto, AuthResponse, User } from "@/lib/types";
 import Cookies from "js-cookie";
 
+// Interface khusus untuk payload ganti sandi awal
+export interface ChangeInitialPasswordPayload {
+  userId: string;
+  oldPassword: string;
+  newPassword: string;
+}
+
 export const authService = {
   // 1. LOGIN
   login: async (data: LoginDto) => {
     const response = await api.post<AuthResponse>("/auth/login", data);
 
+    // Jika response normal (memiliki token), simpan sesi
+    // Jika response adalah requirePasswordChange, blok ini akan dilewati
     if (response.data.access_token) {
       const token = response.data.access_token;
       const user = response.data.user;
@@ -39,6 +48,28 @@ export const authService = {
     return response.data;
   },
 
+  // ============================================================================
+  // [NEW] CHANGE INITIAL PASSWORD (FIRST LOGIN GUARD)
+  // ============================================================================
+  changeInitialPassword: async (data: ChangeInitialPasswordPayload) => {
+    const response = await api.post<AuthResponse>("/auth/change-initial-password", data);
+
+    // Endpoint ini akan langsung me-return JWT Token jika berhasil
+    if (response.data.access_token) {
+      const token = response.data.access_token;
+      const user = response.data.user;
+
+      Cookies.set("token", token, { expires: 1, path: '/' });
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+    }
+
+    return response.data;
+  },
+
   // 3. LOGOUT
   logout: () => {
     Cookies.remove("token", { path: '/' });
@@ -65,16 +96,11 @@ export const authService = {
     }
   },
 
-  // ============================================================================
-  // [NEW] 5. UPDATE PROFILE
-  // Mengirim data profil terbaru ke backend dan menyinkronkan data lokal
-  // ============================================================================
+  // 5. UPDATE PROFILE
   updateProfile: async (data: Partial<User>) => {
     try {
-      // Menggunakan endpoint PATCH sesuai kontrak backend
       const response = await api.patch<User>("/users/me", data);
 
-      // Sinkronisasi LocalStorage agar perubahan (Nama/Avatar) langsung muncul di UI
       if (response.data && typeof window !== "undefined") {
         localStorage.setItem("user", JSON.stringify(response.data));
       }
