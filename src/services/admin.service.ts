@@ -37,10 +37,19 @@ export interface CreateUserPayload {
 
 export interface UpdateUserPayload extends Partial<CreateUserPayload> { }
 
+// [UPDATE] Kontrak Data untuk Pagination
+export interface PaginatedUsersResponse {
+    data: User[];
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+}
+
 export const adminService = {
-    // Get List Users (Support Search & Filter Role)
-    getUsers: async (params?: { search?: string; role?: string }) => {
-        const response = await api.get<User[]>('/users', { params });
+    // [UPDATE] Get List Users (Support Search, Filter Role, & Pagination)
+    getUsers: async (params?: { search?: string; role?: string; page?: number; limit?: number }) => {
+        // Mengubah balikan dari Array biasa <User[]> menjadi Object Pagination <PaginatedUsersResponse>
+        const response = await api.get<PaginatedUsersResponse>('/users', { params });
         return response.data;
     },
 
