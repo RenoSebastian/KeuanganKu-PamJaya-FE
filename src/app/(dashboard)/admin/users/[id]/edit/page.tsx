@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, Save, Building2, User, Calendar, // [NEW] Icon
+  ArrowLeft, Save, Building2, User, Calendar,
   Loader2, Mail, Briefcase, Shield, UserCheck, AlertTriangle
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -28,14 +28,15 @@ export default function EditUserPage({ params }: PageProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [units, setUnits] = useState<UnitKerja[]>([]);
 
+  // State disesuaikan dengan Field Excel PAM Jaya (NPP & Posisi)
   const [formData, setFormData] = useState({
     fullName: "",
-    nip: "",
+    nip: "", // Label di UI: NPP
     email: "",
     unitKerjaId: "",
     role: "USER" as "USER" | "ADMIN" | "DIRECTOR",
-    jobTitle: "",
-    dateOfBirth: "", // [NEW]
+    position: "", // Pengganti jobTitle
+    dateOfBirth: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -51,10 +52,9 @@ export default function EditUserPage({ params }: PageProps) {
 
         setUnits(unitsData);
 
-        // [FIX] Convert ISO Date to YYYY-MM-DD for input type="date"
+        // Parsing ISO Date ke format YYYY-MM-DD untuk input date
         let formattedDob = "";
         if (userData.dateOfBirth) {
-          // Ambil bagian tanggalnya saja (YYYY-MM-DD)
           formattedDob = new Date(userData.dateOfBirth).toISOString().split('T')[0];
         }
 
@@ -64,12 +64,12 @@ export default function EditUserPage({ params }: PageProps) {
           email: userData.email,
           unitKerjaId: userData.unitKerja?.id || "",
           role: userData.role,
-          jobTitle: userData.jobTitle || "",
-          dateOfBirth: formattedDob, // [NEW] Pre-fill date
+          position: userData.position || "", // Ambil dari field position
+          dateOfBirth: formattedDob,
         });
 
       } catch (error) {
-        toast.error("Gagal memuat data user.");
+        toast.error("Gagal memuat data pegawai.");
         router.push("/admin/users");
       } finally {
         setIsLoading(false);
@@ -82,10 +82,11 @@ export default function EditUserPage({ params }: PageProps) {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.fullName) newErrors.fullName = "Nama Lengkap wajib diisi";
-    if (!formData.nip) newErrors.nip = "NIP wajib diisi";
+    if (!formData.nip) newErrors.nip = "NPP wajib diisi";
     if (!formData.email) newErrors.email = "Email wajib diisi";
-    if (!formData.unitKerjaId) newErrors.unitKerjaId = "Unit Kerja wajib dipilih";
-    if (!formData.dateOfBirth) newErrors.dateOfBirth = "Tanggal Lahir wajib diisi"; // [NEW] Validasi
+    if (!formData.unitKerjaId) newErrors.unitKerjaId = "Penempatan wajib dipilih";
+    if (!formData.dateOfBirth) newErrors.dateOfBirth = "Tanggal Lahir wajib diisi";
+    if (!formData.position) newErrors.position = "Posisi wajib diisi";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -102,11 +103,11 @@ export default function EditUserPage({ params }: PageProps) {
 
     try {
       await adminService.updateUser(userId, formData);
-      toast.success("Data user berhasil diperbarui!");
+      toast.success("Data pegawai berhasil diperbarui!");
       router.push("/admin/users");
     } catch (error: any) {
       console.error(error);
-      const msg = error.response?.data?.message || "Gagal update user";
+      const msg = error.response?.data?.message || "Gagal update data pegawai";
       const displayMsg = Array.isArray(msg) ? msg[0] : msg;
       toast.error(displayMsg);
     } finally {
@@ -118,6 +119,7 @@ export default function EditUserPage({ params }: PageProps) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-surface-ground">
         <Loader2 className="w-10 h-10 text-brand-600 animate-spin" />
+        <p className="mt-4 text-slate-500 font-medium">Memuat data pegawai...</p>
       </div>
     );
   }
@@ -132,12 +134,12 @@ export default function EditUserPage({ params }: PageProps) {
             <ArrowLeft className="w-5 h-5" /> Kembali
           </Button>
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center justify-center shadow-lg text-cyan-300">
-              <Briefcase className="w-7 h-7" />
+            <div className="w-14 h-14 bg-emerald-500/20 backdrop-blur-md border border-emerald-500/30 rounded-2xl flex items-center justify-center shadow-lg text-emerald-400">
+              <UserCheck className="w-7 h-7" />
             </div>
             <div className="text-white">
-              <h1 className="text-2xl md:text-3xl font-black">Edit Data Karyawan</h1>
-              <p className="text-brand-100 text-sm opacity-90 mt-1">Perbarui informasi jabatan, unit kerja, atau hak akses.</p>
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight">Perbarui Data Pegawai</h1>
+              <p className="text-brand-100 text-sm opacity-90 mt-1">Sesuaikan informasi posisi, penempatan, atau hak akses PAM Jaya.</p>
             </div>
           </div>
         </div>
@@ -147,45 +149,50 @@ export default function EditUserPage({ params }: PageProps) {
         <Card className="p-6 md:p-8 rounded-[1.5rem] shadow-xl border-white/60 bg-white/95 backdrop-blur-xl">
           <form onSubmit={handleSubmit} className="space-y-8">
 
-            {/* SECTION 1 */}
+            {/* SECTION 1: IDENTITAS */}
             <div className="space-y-5">
               <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
                 <div className="p-2 bg-brand-50 rounded-lg text-brand-600"><User className="w-5 h-5" /></div>
-                <h3 className="font-bold text-slate-800 text-lg">Identitas & Kontak</h3>
+                <h3 className="font-bold text-slate-800 text-lg">Identitas Pegawai</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label>Nama Lengkap</Label>
+                  <Label>Nama Lengkap <span className="text-rose-500">*</span></Label>
                   <Input
                     value={formData.fullName}
                     onChange={e => setFormData({ ...formData, fullName: e.target.value })}
                     className={cn(errors.fullName && "border-rose-500")}
+                    placeholder="Masukkan nama lengkap"
                   />
+                  {errors.fullName && <p className="text-[10px] text-rose-500 font-bold">{errors.fullName}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>NIP</Label>
+                  <Label>NPP <span className="text-rose-500">*</span></Label>
                   <Input
                     value={formData.nip}
                     onChange={e => setFormData({ ...formData, nip: e.target.value })}
                     className={cn("font-mono", errors.nip && "border-rose-500")}
+                    placeholder="Contoh: 502633"
                   />
+                  {errors.nip && <p className="text-[10px] text-rose-500 font-bold">{errors.nip}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Email</Label>
+                  <Label>Email Perusahaan <span className="text-rose-500">*</span></Label>
                   <Input
                     type="email"
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                     className={cn(errors.email && "border-rose-500")}
+                    placeholder="nama@pamjaya.co.id"
                   />
+                  {errors.email && <p className="text-[10px] text-rose-500 font-bold">{errors.email}</p>}
                 </div>
 
-                {/* [NEW] KOLOM TANGGAL LAHIR */}
                 <div className="space-y-2">
-                  <Label>Tanggal Lahir</Label>
+                  <Label>Tanggal Lahir <span className="text-rose-500">*</span></Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                     <Input
@@ -197,35 +204,25 @@ export default function EditUserPage({ params }: PageProps) {
                   </div>
                   {errors.dateOfBirth && <p className="text-[10px] text-rose-500 font-bold">{errors.dateOfBirth}</p>}
                 </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label>Jabatan</Label>
-                  <Input
-                    value={formData.jobTitle}
-                    onChange={e => setFormData({ ...formData, jobTitle: e.target.value })}
-                  />
-                </div>
               </div>
             </div>
 
-            {/* SECTION 2 */}
+            {/* SECTION 2: ORGANISASI */}
             <div className="space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Shield className="w-5 h-5" /></div>
-                  <h3 className="font-bold text-slate-800 text-lg">Mutasi & Hak Akses</h3>
-                </div>
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Shield className="w-5 h-5" /></div>
+                <h3 className="font-bold text-slate-800 text-lg">Organisasi & Hak Akses</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <Label>Unit Kerja</Label>
+                  <Label>Penempatan (Direktorat/Divisi) <span className="text-rose-500">*</span></Label>
                   <select
                     className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm", errors.unitKerjaId && "border-rose-500")}
                     value={formData.unitKerjaId}
                     onChange={e => setFormData({ ...formData, unitKerjaId: e.target.value })}
                   >
-                    <option value="">-- Pilih Unit Kerja --</option>
+                    <option value="">-- Pilih Penempatan --</option>
                     {units.map(unit => (
                       <option key={unit.id} value={unit.id}>{unit.namaUnit} ({unit.kodeUnit})</option>
                     ))}
@@ -234,7 +231,21 @@ export default function EditUserPage({ params }: PageProps) {
                 </div>
 
                 <div className="space-y-3">
-                  <Label>Role Aplikasi</Label>
+                  <Label>Posisi Pekerjaan <span className="text-rose-500">*</span></Label>
+                  <div className="relative">
+                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <Input
+                      placeholder="Contoh: Tax Leader (Plt.)"
+                      value={formData.position}
+                      onChange={e => setFormData({ ...formData, position: e.target.value })}
+                      className={cn("pl-9", errors.position && "border-rose-500")}
+                    />
+                  </div>
+                  {errors.position && <p className="text-[10px] text-rose-500 font-bold">{errors.position}</p>}
+                </div>
+
+                <div className="space-y-3 md:col-span-2">
+                  <Label>Role Sistem <span className="text-rose-500">*</span></Label>
                   <div className="grid grid-cols-3 gap-2">
                     {["USER", "DIRECTOR", "ADMIN"].map((role) => (
                       <button
@@ -243,7 +254,7 @@ export default function EditUserPage({ params }: PageProps) {
                         onClick={() => setFormData({ ...formData, role: role as any })}
                         className={cn(
                           "text-xs font-bold py-2 px-2 rounded-md border transition-all",
-                          formData.role === role ? "bg-brand-600 text-white" : "bg-white text-slate-500 hover:bg-slate-50"
+                          formData.role === role ? "bg-brand-600 text-white shadow-md" : "bg-white text-slate-500 hover:bg-slate-50"
                         )}
                       >
                         {role}
@@ -256,7 +267,7 @@ export default function EditUserPage({ params }: PageProps) {
 
             <div className="pt-6 flex gap-4 border-t border-slate-100">
               <Button type="button" variant="outline" className="flex-1" onClick={() => router.back()} disabled={isSaving}>Batal</Button>
-              <Button type="submit" disabled={isSaving} variant="primary" className="flex-2">
+              <Button type="submit" disabled={isSaving} className="flex-2 bg-emerald-600 hover:bg-emerald-700">
                 {isSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Menyimpan...</> : "Simpan Perubahan"}
               </Button>
             </div>

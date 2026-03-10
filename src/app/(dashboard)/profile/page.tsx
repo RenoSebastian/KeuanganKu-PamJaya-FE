@@ -5,46 +5,43 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   User, Calendar, Briefcase, LogOut, Save, Mail,
-  Phone, MapPin, Heart, ChevronRight, Camera, Pencil, X, ShieldCheck,
-  Target, Building2
+  Phone, MapPin, Target, ChevronRight, Camera, Pencil, X, ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import api from "@/lib/axios"; // Import Helper Axios
+import api from "@/lib/axios";
 
 export default function ProfilePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // State Loading & Edit
-  const [isLoading, setIsLoading] = useState(true); // Loading awal fetch data
-  const [isSaving, setIsSaving] = useState(false);  // Loading saat simpan
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // State Data User (Display Only / Static Info)
+  // State Data User (Display Only / Static Info - Data Organisasi yang Immutable)
   const [userData, setUserData] = useState<any>({
     fullName: "",
     nip: "",
     email: "",
     role: "",
     unitKerja: "",
-    joinDate: "01 Agustus 2015", // Hardcoded sesuai template awal
+    position: "", // [NEW] Untuk display posisi jabatan
+    joinDate: "01 Agustus 2015",
     avatar: "",
-    goals: "", // [NEW] Untuk display di card kiri
+    goals: "",
+    noWa: "",
   });
 
-  // State Form Input (Editable Fields)
+  // State Form Input (Editable Fields - Data Personal yang Mutable)
   const [formData, setFormData] = useState({
     fullName: "",
     dateOfBirth: "",
     gender: "Laki-laki",
     address: "",
-    noWa: "",         // Nomor WhatsApp
-    email: "",        // Email Pribadi
-    avatar: "",       // Base64 string foto diri
-    agencyName: "",   // Nama Group Agency
-    companyName: "",  // [NEW] Nama Perusahaan Induk
-    agentLevel: "",   // Jabatan/Level Agen (Sekarang Text Input)
-    goals: "",        // [NEW] Goals/Tujuan (Text Area)
+    noWa: "",
+    avatar: "",
+    goals: "",
   });
 
   // Backup Data (Untuk fitur Cancel)
@@ -60,16 +57,18 @@ export default function ProfilePage() {
         const response = await api.get("/users/me");
         const user = response.data;
 
-        // Set Data Tampilan Static (Informasi Akun/Kepegawaian)
+        // Set Data Tampilan Static
         setUserData({
           fullName: user.fullName || "",
           nip: user.nip || "-",
           email: user.email || "",
           role: user.role || "USER",
-          unitKerja: user.unitKerja?.namaUnit || "Unit Kerja Tidak Diketahui",
+          unitKerja: user.unitKerja?.namaUnit || "Belum ada penempatan",
+          position: user.position || "Belum ada posisi",
           joinDate: "01 Agustus 2015",
           avatar: user.avatar || "",
-          goals: user.goals || "", // [NEW]
+          goals: user.goals || "",
+          noWa: user.noWa || "",
         });
 
         // Format Tanggal Lahir untuk input type="date" (YYYY-MM-DD)
@@ -82,11 +81,7 @@ export default function ProfilePage() {
           gender: user.gender || "Laki-laki",
           address: user.address || "",
           noWa: user.noWa || "",
-          email: user.email || "",
-          agencyName: user.agencyName || "",
-          companyName: user.companyName || "", // [NEW]
-          agentLevel: user.agentLevel || "",
-          goals: user.goals || "",             // [NEW]
+          goals: user.goals || "",
           avatar: user.avatar || "",
         };
 
@@ -123,8 +118,8 @@ export default function ProfilePage() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
-        setPreviewImage(base64String); // Update UI langsung
-        setFormData((prev) => ({ ...prev, avatar: base64String })); // Simpan ke state form
+        setPreviewImage(base64String);
+        setFormData((prev) => ({ ...prev, avatar: base64String }));
       };
       reader.readAsDataURL(file);
     }
@@ -138,24 +133,21 @@ export default function ProfilePage() {
 
   const handleCancel = () => {
     setFormData(backupData);
-    setPreviewImage(userData.avatar || null); // Reset preview ke gambar lama
+    setPreviewImage(userData.avatar || null);
     setIsEditing(false);
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // 1. Siapkan Payload
+      // 1. Siapkan Payload (Hanya Data Personal)
       const payload = {
         fullName: formData.fullName,
         dateOfBirth: formData.dateOfBirth,
         gender: formData.gender,
         address: formData.address,
         noWa: formData.noWa,
-        agencyName: formData.agencyName,
-        companyName: formData.companyName, // [NEW]
-        agentLevel: formData.agentLevel,
-        goals: formData.goals,             // [NEW]
+        goals: formData.goals,
         avatar: formData.avatar,
       };
 
@@ -167,7 +159,8 @@ export default function ProfilePage() {
         ...prev,
         fullName: formData.fullName,
         avatar: formData.avatar,
-        goals: formData.goals, // [NEW] Update goals static
+        goals: formData.goals,
+        noWa: formData.noWa,
       }));
 
       // 4. Sinkronisasi LocalStorage
@@ -176,8 +169,6 @@ export default function ProfilePage() {
         const parsed = JSON.parse(storedUser);
         parsed.fullName = formData.fullName;
         parsed.avatar = formData.avatar;
-        // Simpan field baru jika diperlukan
-        parsed.companyName = formData.companyName;
         localStorage.setItem("user", JSON.stringify(parsed));
       }
 
@@ -200,7 +191,6 @@ export default function ProfilePage() {
     }
   };
 
-  // Helper styles
   const inputStyle = isEditing
     ? "bg-white border-blue-300 ring-2 ring-blue-100 shadow-sm"
     : "bg-slate-50 border-transparent text-slate-600 cursor-not-allowed opacity-90";
@@ -248,7 +238,6 @@ export default function ProfilePage() {
                   )}
                 </div>
 
-                {/* Hidden Input File */}
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -257,7 +246,6 @@ export default function ProfilePage() {
                   onChange={handleFileChange}
                 />
 
-                {/* Mode Badge */}
                 <div className={cn(
                   "absolute bottom-1 right-1 p-2 rounded-full border-2 border-white shadow-sm transition-colors",
                   isEditing ? "bg-green-500 text-white" : "bg-slate-200 text-slate-500"
@@ -273,11 +261,10 @@ export default function ProfilePage() {
                 <Mail className="w-3 h-3" /> {userData.email}
               </p>
 
-              {/* [NEW] Menampilkan Goals Singkat di Card */}
               {userData.goals && (
                 <div className="mt-4 p-3 bg-blue-50/50 rounded-xl w-full text-left border border-blue-100">
                   <p className="text-[10px] uppercase font-bold text-blue-400 mb-1 flex items-center gap-1">
-                    <Target className="w-3 h-3" /> Goals Saya
+                    <Target className="w-3 h-3" /> Goals Pribadi
                   </p>
                   <p className="text-xs text-slate-600 line-clamp-3 italic">
                     "{userData.goals}"
@@ -299,27 +286,19 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* 2. Agen Info Card */}
+            {/* 2. Pegawai Info Card (Read-Only) */}
             <div className="bg-white/60 backdrop-blur-md border border-white/60 shadow-sm rounded-3xl overflow-hidden">
               <div className="px-5 py-3 bg-slate-100/50 border-b border-slate-200/50 flex items-center justify-between">
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                  <Briefcase className="w-4 h-4" /> Informasi Agen
+                  <Briefcase className="w-4 h-4" /> Informasi Organisasi
                 </h3>
               </div>
               <div className="divide-y divide-slate-100">
-                {/* [NEW] Menampilkan Nama Perusahaan di Card */}
-                <InfoRow
-                  label="Perusahaan"
-                  value={formData.companyName || "-"}
-                />
-                <InfoRow
-                  label="Group Agency"
-                  value={formData.agencyName || "-"}
-                />
-                <InfoRow
-                  label="Level/Jabatan"
-                  value={formData.agentLevel || "-"}
-                />
+                <InfoRow label="NPP" value={userData.nip} />
+                <InfoRow label="Posisi" value={userData.position} />
+                <InfoRow label="Unit Kerja" value={userData.unitKerja} />
+
+                {/* Tampilkan WhatsApp Statis di sini saat tidak mode edit */}
                 <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors">
                   <span className="text-xs text-slate-500 font-semibold flex items-center gap-1">
                     <svg className="w-3 h-3 fill-green-500" viewBox="0 0 24 24">
@@ -327,7 +306,7 @@ export default function ProfilePage() {
                     </svg>
                     WhatsApp
                   </span>
-                  <span className="text-xs text-slate-800 font-bold">{formData.noWa || "-"}</span>
+                  <span className="text-xs text-slate-800 font-bold">{userData.noWa || "-"}</span>
                 </div>
               </div>
             </div>
@@ -341,7 +320,7 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between mb-3 px-1">
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                   <div className="p-2 bg-blue-100 rounded-lg text-blue-600"><User className="w-5 h-5" /></div>
-                  Identitas Diri
+                  Profil Pribadi
                 </h3>
                 {isEditing && (
                   <span className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold animate-pulse border border-blue-200">
@@ -351,6 +330,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="bg-white/80 backdrop-blur-xl border border-white/60 rounded-[2rem] p-5 md:p-8 shadow-sm space-y-5">
+
                 {/* Nama Lengkap */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">Nama Lengkap</label>
@@ -413,10 +393,10 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* [NEW] GOALS / TUJUAN */}
+                {/* Goals / Tujuan */}
                 <div className="space-y-2 pt-2 border-t border-slate-100">
                   <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider flex items-center gap-1">
-                    <Target className="w-3.5 h-3.5" /> Goals / Tujuan Anda
+                    <Target className="w-3.5 h-3.5" /> Goals / Tujuan Perencanaan
                   </label>
                   <div className="relative">
                     <textarea
@@ -425,7 +405,7 @@ export default function ProfilePage() {
                       className={cn("w-full px-5 py-3.5 rounded-2xl text-sm font-bold transition-all resize-none focus:outline-none leading-relaxed", inputStyle)}
                       value={formData.goals}
                       onChange={(e) => setFormData({ ...formData, goals: e.target.value })}
-                      placeholder="Apa tujuan utama Anda tahun ini? (Contoh: Mencapai MDRT, Membantu 100 keluarga)"
+                      placeholder="Apa tujuan utama perencanaan finansial Anda tahun ini?"
                     />
                   </div>
                 </div>
@@ -433,78 +413,35 @@ export default function ProfilePage() {
               </div>
             </section>
 
-            {/* SECTION B: Informasi Keagenan & Kontak */}
+            {/* SECTION B: Informasi Kontak Lanjutan */}
             <section className="animate-in slide-in-from-bottom-4 duration-500 delay-100">
               <div className="flex items-center justify-between mb-3 px-1">
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <div className="p-2 bg-green-100 rounded-lg text-green-600"><Briefcase className="w-5 h-5" /></div>
-                  Informasi Keagenan & Kontak
+                  <div className="p-2 bg-green-100 rounded-lg text-green-600"><Phone className="w-5 h-5" /></div>
+                  Informasi Kontak
                 </h3>
               </div>
 
               <div className="bg-white/80 backdrop-blur-xl border border-white/60 rounded-[2rem] p-5 md:p-8 shadow-sm space-y-5">
 
-                {/* Email - Read Only */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">Email (Akun)</label>
-                  <div className="relative">
-                    <input
-                      disabled={true}
-                      value={userData.email}
-                      className="w-full pl-12 pr-5 py-3.5 rounded-2xl text-sm font-bold bg-slate-100 text-slate-400 cursor-not-allowed border-transparent"
-                    />
-                    <Mail className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* [NEW] Nama Perusahaan (Parent Company) */}
+                  {/* Email - Read Only (Selalu statis dari akun) */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider flex items-center gap-1">
-                      <Building2 className="w-3 h-3" /> Nama Perusahaan
-                    </label>
-                    <input
-                      disabled={!isEditing}
-                      value={formData.companyName}
-                      onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                      placeholder="Contoh: PT Prudential Life Assurance"
-                      className={cn("w-full px-5 py-3.5 rounded-2xl text-sm font-bold transition-all focus:outline-none", inputStyle)}
-                    />
+                    <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">Email Akun</label>
+                    <div className="relative">
+                      <input
+                        disabled={true}
+                        value={userData.email}
+                        className="w-full pl-12 pr-5 py-3.5 rounded-2xl text-sm font-bold bg-slate-100 text-slate-400 cursor-not-allowed border-transparent"
+                      />
+                      <Mail className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    </div>
                   </div>
 
-                  {/* Nama Group Agency */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">Nama Group Agency</label>
-                    <input
-                      disabled={!isEditing}
-                      value={formData.agencyName}
-                      onChange={(e) => setFormData({ ...formData, agencyName: e.target.value })}
-                      placeholder="Contoh: Agency Super Team"
-                      className={cn("w-full px-5 py-3.5 rounded-2xl text-sm font-bold transition-all focus:outline-none", inputStyle)}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* Jabatan/Level Agen - SEKARANG TEXT INPUT */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">Jabatan / Level</label>
-                    <input
-                      disabled={!isEditing}
-                      value={formData.agentLevel}
-                      onChange={(e) => setFormData({ ...formData, agentLevel: e.target.value })}
-                      placeholder="Contoh: Unit Manager"
-                      className={cn("w-full px-5 py-3.5 rounded-2xl text-sm font-bold transition-all focus:outline-none", inputStyle)}
-                    />
-                  </div>
-
-                  {/* WhatsApp */}
+                  {/* WhatsApp - Editable */}
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider flex items-center gap-1">
                       Nomor WhatsApp
-                      <svg className="w-3.5 h-3.5 fill-green-500" viewBox="0 0 24 24">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.63 1.438h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-                      </svg>
                     </label>
                     <div className="relative">
                       <input
@@ -587,12 +524,12 @@ export default function ProfilePage() {
  */
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors group">
+    <div className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors group border-b border-slate-100/50 last:border-0">
       <span className="text-xs text-slate-500 font-semibold group-hover:text-slate-600 transition-colors">
         {label}
       </span>
       <span className="text-xs text-slate-800 font-bold break-all ml-4 text-right uppercase tracking-tight">
-        {value}
+        {value || "-"}
       </span>
     </div>
   );

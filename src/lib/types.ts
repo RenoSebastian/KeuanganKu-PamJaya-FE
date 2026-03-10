@@ -274,6 +274,8 @@ export interface SpecialGoalResult {
 export interface PersonalInfo {
   name: string;
   dob: string;
+  // [NEW] Sinkronisasi Usia (Kalkulasi Backend)
+  age?: number;
   gender: "L" | "P";
   ethnicity: string;
   religion: string;
@@ -418,6 +420,11 @@ export interface UnitKerja {
   id: string;
   kodeUnit: string;
   namaUnit: string;
+  // --- [NEW] Hierarchical Unit Fields ---
+  parentId?: string | null;
+  parent?: UnitKerja;
+  subUnits?: UnitKerja[];
+  // --------------------------------------
   name?: string; // Fallback untuk compatibility
   code?: string; // Fallback
   userCount?: number;
@@ -498,6 +505,8 @@ export interface AuditProfile {
   status: HealthStatus;
   healthScore: number;
   lastCheckDate: string;
+  // [NEW] Injeksi Age
+  age?: number;
 }
 
 export interface EmployeeAuditDetail {
@@ -544,22 +553,21 @@ export interface User {
   nip?: string;
   dateOfBirth?: string;
 
-  // --- [NEW] ADDITIONAL PROFILE FIELDS ---
-  avatar?: string;      // [ADDITION] Foto diri (Base64 String)
-  gender?: string;      // [ADDITION] Jenis Kelamin
-  address?: string;     // [ADDITION] Alamat Domisili
-  noWa?: string;        // [ADDITION] Nomor WhatsApp
-  agencyName?: string;  // [ADDITION] Nama Perusahaan Asuransi
-  agentLevel?: string;  // [ADDITION] Jabatan/Level Agen
-  companyName?: string;
-  goals?: string;
+  // --- [FIX] SINKRONISASI DENGAN EXCEL PAM JAYA ---
+  position?: string;      // Properti yang menyebabkan error 2339
+  // ------------------------------------------------
+
+  // --- [OPTIONAL] FIELD PROFIL LAINNYA ---
+  avatar?: string;
+  gender?: string;
+  address?: string;
+  noWa?: string;
   // ----------------------------------------
 
   unitKerja?: UnitKerja;
   createdAt?: string;
   updatedAt?: string;
 
-  // Properti untuk hasil pencarian & dashboard
   financialChecks?: {
     status: HealthStatus;
     healthScore: number;

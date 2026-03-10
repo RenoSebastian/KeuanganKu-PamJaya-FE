@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
    ArrowLeft, Save, UserPlus,
-   Building2, Lock, Calendar, // [NEW] Icon Calendar
-   User, Mail, BadgeCheck, Briefcase, UserCheck, AlertTriangle, Loader2
+   Building2, Calendar,
+   User, Loader2, Briefcase
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,16 +21,16 @@ export default function CreateUserPage() {
    const [loading, setLoading] = useState(false);
    const [units, setUnits] = useState<UnitKerja[]>([]);
 
-   // Form State
+   // Form State (Disinkronkan dengan Schema Master Data PAM Jaya)
    const [formData, setFormData] = useState({
       fullName: "",
-      nip: "",
+      nip: "", // Di UI menggunakan label NPP
       email: "",
       password: "PamJaya123!",
       unitKerjaId: "",
       role: "USER" as "USER" | "ADMIN" | "DIRECTOR",
-      jobTitle: "",
-      dateOfBirth: "", // [NEW] Field Tanggal Lahir
+      dateOfBirth: "",
+      position: "", // Mengakomodasi kolom "POSISI" dari file Excel
    });
 
    const [errors, setErrors] = useState<Record<string, string>>({});
@@ -50,10 +50,11 @@ export default function CreateUserPage() {
    const validate = () => {
       const newErrors: Record<string, string> = {};
       if (!formData.fullName) newErrors.fullName = "Nama Lengkap wajib diisi";
-      if (!formData.nip) newErrors.nip = "NIP wajib diisi";
+      if (!formData.nip) newErrors.nip = "NPP wajib diisi";
       if (!formData.email) newErrors.email = "Email wajib diisi";
       if (!formData.unitKerjaId) newErrors.unitKerjaId = "Unit Kerja wajib dipilih";
-      if (!formData.dateOfBirth) newErrors.dateOfBirth = "Tanggal Lahir wajib diisi"; // [NEW] Validasi
+      if (!formData.dateOfBirth) newErrors.dateOfBirth = "Tanggal Lahir wajib diisi";
+      if (!formData.position) newErrors.position = "Posisi wajib diisi";
 
       setErrors(newErrors);
       return Object.keys(newErrors).length === 0;
@@ -69,15 +70,12 @@ export default function CreateUserPage() {
       setLoading(true);
 
       try {
-         // Backend mengharapkan ISO Date string, input type="date" sudah format YYYY-MM-DD
-         // yang bisa langsung diterima Prisma sebagai Date
          await adminService.createUser(formData);
          toast.success(`User ${formData.fullName} berhasil didaftarkan!`);
          router.push("/admin/users");
       } catch (error: any) {
          console.error(error);
          const msg = error.response?.data?.message || "Gagal menyimpan user";
-         // Handle error array dari class-validator backend
          const displayMsg = Array.isArray(msg) ? msg[0] : msg;
          toast.error(displayMsg);
       } finally {
@@ -100,7 +98,7 @@ export default function CreateUserPage() {
                   </div>
                   <div className="text-white">
                      <h1 className="text-2xl md:text-3xl font-black tracking-tight">Registrasi Karyawan</h1>
-                     <p className="text-brand-100 text-sm opacity-90 mt-1">Tambahkan akun pegawai baru ke dalam sistem.</p>
+                     <p className="text-brand-100 text-sm opacity-90 mt-1">Tambahkan akun pegawai baru ke dalam sistem PAM Jaya.</p>
                   </div>
                </div>
             </div>
@@ -110,7 +108,7 @@ export default function CreateUserPage() {
             <Card className="p-6 md:p-8 rounded-[1.5rem] shadow-xl border-white/60 bg-white/95 backdrop-blur-xl">
                <form onSubmit={handleSubmit} className="space-y-8">
 
-                  {/* SECTION 1: IDENTITAS */}
+                  {/* SECTION 1: IDENTITAS PEGAWAI */}
                   <div className="space-y-5">
                      <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
                         <div className="p-2 bg-brand-50 rounded-lg text-brand-600"><User className="w-5 h-5" /></div>
@@ -119,9 +117,9 @@ export default function CreateUserPage() {
 
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                           <Label>Nama Lengkap</Label>
+                           <Label>Nama Lengkap <span className="text-rose-500">*</span></Label>
                            <Input
-                              placeholder="Contoh: Budi Santoso"
+                              placeholder="Contoh: Maghfira Dwi Puspita"
                               value={formData.fullName}
                               onChange={e => setFormData({ ...formData, fullName: e.target.value })}
                               className={cn(errors.fullName && "border-rose-500")}
@@ -130,9 +128,9 @@ export default function CreateUserPage() {
                         </div>
 
                         <div className="space-y-2">
-                           <Label>NIP</Label>
+                           <Label>NPP <span className="text-rose-500">*</span></Label>
                            <Input
-                              placeholder="1990..."
+                              placeholder="Contoh: 502633"
                               value={formData.nip}
                               onChange={e => setFormData({ ...formData, nip: e.target.value })}
                               className={cn("font-mono", errors.nip && "border-rose-500")}
@@ -141,10 +139,10 @@ export default function CreateUserPage() {
                         </div>
 
                         <div className="space-y-2">
-                           <Label>Email Perusahaan</Label>
+                           <Label>Email Perusahaan <span className="text-rose-500">*</span></Label>
                            <Input
                               type="email"
-                              placeholder="nama@PamJaya.co.id"
+                              placeholder="nama@pamjaya.co.id"
                               value={formData.email}
                               onChange={e => setFormData({ ...formData, email: e.target.value })}
                               className={cn(errors.email && "border-rose-500")}
@@ -152,9 +150,8 @@ export default function CreateUserPage() {
                            {errors.email && <p className="text-[10px] text-rose-500 font-bold">{errors.email}</p>}
                         </div>
 
-                        {/* [NEW] KOLOM TANGGAL LAHIR */}
                         <div className="space-y-2">
-                           <Label>Tanggal Lahir</Label>
+                           <Label>Tanggal Lahir <span className="text-rose-500">*</span></Label>
                            <div className="relative">
                               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                               <Input
@@ -166,34 +163,25 @@ export default function CreateUserPage() {
                            </div>
                            {errors.dateOfBirth && <p className="text-[10px] text-rose-500 font-bold">{errors.dateOfBirth}</p>}
                         </div>
-
-                        <div className="space-y-2 md:col-span-2">
-                           <Label>Jabatan (Opsional)</Label>
-                           <Input
-                              placeholder="Contoh: Staff IT"
-                              value={formData.jobTitle}
-                              onChange={e => setFormData({ ...formData, jobTitle: e.target.value })}
-                           />
-                        </div>
                      </div>
                   </div>
 
-                  {/* SECTION 2: ORGANISASI */}
+                  {/* SECTION 2: STRUKTUR ORGANISASI */}
                   <div className="space-y-5">
                      <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
                         <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Building2 className="w-5 h-5" /></div>
-                        <h3 className="font-bold text-slate-800 text-lg">Organisasi & Hak Akses</h3>
+                        <h3 className="font-bold text-slate-800 text-lg">Organisasi & Penempatan</h3>
                      </div>
 
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-3">
-                           <Label>Unit Kerja</Label>
+                           <Label>Direktorat / Divisi / Sub Divisi <span className="text-rose-500">*</span></Label>
                            <select
                               className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm", errors.unitKerjaId && "border-rose-500")}
                               value={formData.unitKerjaId}
                               onChange={e => setFormData({ ...formData, unitKerjaId: e.target.value })}
                            >
-                              <option value="">-- Pilih Unit Kerja --</option>
+                              <option value="">-- Pilih Penempatan --</option>
                               {units.map(unit => (
                                  <option key={unit.id} value={unit.id}>{unit.namaUnit} ({unit.kodeUnit})</option>
                               ))}
@@ -202,7 +190,21 @@ export default function CreateUserPage() {
                         </div>
 
                         <div className="space-y-3">
-                           <Label>Role Aplikasi</Label>
+                           <Label>Posisi Pekerjaan <span className="text-rose-500">*</span></Label>
+                           <div className="relative">
+                              <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                              <Input
+                                 placeholder="Contoh: Tax Leader (Plt.)"
+                                 value={formData.position}
+                                 onChange={e => setFormData({ ...formData, position: e.target.value })}
+                                 className={cn("pl-9", errors.position && "border-rose-500")}
+                              />
+                           </div>
+                           {errors.position && <p className="text-[10px] text-rose-500 font-bold">{errors.position}</p>}
+                        </div>
+
+                        <div className="space-y-3 md:col-span-2">
+                           <Label>Role Sistem (Hak Akses) <span className="text-rose-500">*</span></Label>
                            <div className="grid grid-cols-3 gap-2">
                               {["USER", "DIRECTOR", "ADMIN"].map((role) => (
                                  <button
@@ -225,7 +227,7 @@ export default function CreateUserPage() {
                   <div className="pt-4 flex gap-3 border-t border-slate-100 mt-6">
                      <Button type="button" variant="outline" className="flex-1" onClick={() => router.back()}>Batal</Button>
                      <Button type="submit" disabled={loading} className="flex-2 bg-emerald-600 hover:bg-emerald-700">
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />} Simpan User
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />} Simpan Pegawai
                      </Button>
                   </div>
                </form>

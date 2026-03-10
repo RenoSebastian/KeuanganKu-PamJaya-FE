@@ -2,6 +2,7 @@ import api from '@/lib/axios';
 
 // Tipe Data User sesuai response Backend terbaru
 export interface User {
+    position: string;
     dateOfBirth: any;
     id: string;
     nip: string; // [NEW] Field Baru
