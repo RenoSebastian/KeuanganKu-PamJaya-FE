@@ -99,13 +99,15 @@ export const authService = {
   // 5. UPDATE PROFILE
   updateProfile: async (data: Partial<User>) => {
     try {
-      const response = await api.patch<User>("/users/me", data);
+      // Eksekusi mutasi data
+      await api.patch<User>("/users/me", data);
 
-      if (response.data && typeof window !== "undefined") {
-        localStorage.setItem("user", JSON.stringify(response.data));
-      }
+      // [REFACTORING LOGIC] Terapkan Information Expert
+      // Panggil ulang getMe() untuk mengambil relasi tabel secara utuh dari backend.
+      // Hal ini memastikan localStorage dan state selalu selaras (Single Source of Truth).
+      const updatedUser = await authService.getMe();
 
-      return response.data;
+      return updatedUser;
     } catch (error) {
       console.error("Gagal update profil di service:", error);
       throw error;
