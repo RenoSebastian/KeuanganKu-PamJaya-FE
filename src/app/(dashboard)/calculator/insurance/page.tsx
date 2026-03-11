@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-// [NEW] Import InfoPopover
 import { InfoPopover } from "@/components/ui/info-popover";
 import {
   ShieldCheck, HeartPulse, BadgeDollarSign,
@@ -19,8 +18,15 @@ import { InsuranceResult } from "@/lib/types";
 import { financialService } from "@/services/financial.service";
 import { InsuranceGuide } from "@/components/features/calculator/insurance-guide";
 import { PdfLoadingModal } from "@/components/features/finance/pdf-loading-modal";
+import { useAuthUser } from "@/hooks/use-auth-user";
+
+const DEFAULT_INSURANCE_TYPE = "LIFE";
 
 export default function InsurancePage() {
+  // --- INJECTION: Information Expert ---
+  const { user } = useAuthUser();
+  const isInitialized = useRef(false);
+
   // --- STATE INPUT ---
   // Card 1: Utang
   const [debtKPR, setDebtKPR] = useState("");
@@ -42,6 +48,7 @@ export default function InsurancePage() {
   // Card 2: Proteksi Penghasilan
   const [annualIncome, setAnnualIncome] = useState("");
   const [protectionDuration, setProtectionDuration] = useState("10");
+  const [dependentCount, setDependentCount] = useState(""); // [NEW] State for Dependent
   const [inflation, setInflation] = useState(5);
   const [returnRate, setReturnRate] = useState(6);
 
@@ -65,6 +72,14 @@ export default function InsurancePage() {
     '/images/asuransi/rancangproteksi1.webp',
     '/images/asuransi/rancangproteksi2.webp'
   ];
+
+  // Efek Lifecycle: Inisialisasi dependentCount dari Master Data User (Smart Default)
+  useEffect(() => {
+    if (user && user.dependentCount !== undefined && !isInitialized.current) {
+      setDependentCount(user.dependentCount.toString());
+      isInitialized.current = true;
+    }
+  }, [user]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -114,6 +129,10 @@ export default function InsurancePage() {
       newErrors.protectionDuration = "Min 1 thn";
     }
 
+    if (!dependentCount || parseInt(dependentCount) < 0) {
+      newErrors.dependentCount = "Isi jumlah valid";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -134,17 +153,18 @@ export default function InsurancePage() {
 
       const totalDebt = pDebtKPR + pDebtKPM + pDebtProd + pDebtCons + pDebtOther;
       const pIncome = parseMoney(annualIncome);
-      const pFinalExpense = parseMoney(finalExpense); // [NEW] Parsing biaya pemakaman
+      const pFinalExpense = parseMoney(finalExpense);
       const pExisting = parseMoney(existingInsurance);
 
+      // Resolusi hardcode ke payload dinamis
       const response = await financialService.saveInsurancePlan({
-        type: "LIFE",
-        dependentCount: 2,
+        type: DEFAULT_INSURANCE_TYPE,
+        dependentCount: parseInt(dependentCount) || 0,
         monthlyExpense: pIncome / 12,
         existingDebt: totalDebt,
         existingCoverage: pExisting,
         protectionDuration: parseInt(protectionDuration) || 10,
-        finalExpense: pFinalExpense, // [ADDED] Kirim ke Backend DTO
+        finalExpense: pFinalExpense,
         inflationRate: inflation,
         returnRate: returnRate
       } as any);
@@ -158,7 +178,6 @@ export default function InsurancePage() {
 
       setResult({
         totalDebt: totalDebt,
-        // [FIXED LOGIC] Ambil nilai murni dari hasil kalkulasi Backend
         incomeReplacementValue: calc.incomeReplacementValue,
         totalFundNeeded: calc.totalNeeded,
         shortfall: calc.coverageGap
@@ -177,6 +196,7 @@ export default function InsurancePage() {
     setDebtKPR(""); setDebtKPM(""); setDebtProductive(""); setDebtConsumptive(""); setDebtOther("");
     setAnnualIncome(""); setProtectionDuration("10");
     setFinalExpense(""); setExistingInsurance("");
+    setDependentCount(user?.dependentCount?.toString() || "0"); // Reset back to smart default
     setResult(null);
     setSavedId(null);
     setErrors({});
@@ -205,16 +225,16 @@ export default function InsurancePage() {
           const totalDebt = pDebtKPR + pDebtKPM + pDebtProd + pDebtCons + pDebtOther;
           const pIncome = parseMoney(annualIncome);
           const pExisting = parseMoney(existingInsurance);
-          const pFinalExpense = parseMoney(finalExpense); // [NEW] Parsing biaya pemakaman
+          const pFinalExpense = parseMoney(finalExpense);
 
           const response = await financialService.saveInsurancePlan({
-            type: "LIFE",
-            dependentCount: 2,
+            type: DEFAULT_INSURANCE_TYPE,
+            dependentCount: parseInt(dependentCount) || 0,
             monthlyExpense: pIncome / 12,
             existingDebt: totalDebt,
             existingCoverage: pExisting,
             protectionDuration: parseInt(protectionDuration) || 10,
-            finalExpense: pFinalExpense, // [ADDED] Kirim ke Backend DTO
+            finalExpense: pFinalExpense,
             inflationRate: inflation,
             returnRate: returnRate
           } as any);
@@ -227,7 +247,6 @@ export default function InsurancePage() {
 
             setResult({
               totalDebt: totalDebt,
-              // [FIXED LOGIC] Ambil nilai murni dari hasil kalkulasi Backend
               incomeReplacementValue: calc.incomeReplacementValue,
               totalFundNeeded: calc.totalNeeded,
               shortfall: calc.coverageGap
@@ -263,11 +282,9 @@ export default function InsurancePage() {
   const [tempMonthly, setTempMonthly] = useState("");
   const [tempTenor, setTempTenor] = useState("");
 
-  // Fungsi Penerapan Kalkulasi
   const applyCalculation = (type: 'KPR' | 'KPM' | 'INCOME') => {
     const monthly = parseInt(tempMonthly.replace(/\./g, "")) || 0;
 
-    // [LOGIC] Jika INCOME, otomatis dikali 12. Jika Utang, ambil dari input user.
     let tenor = 0;
     if (type === 'INCOME') {
       tenor = 12;
@@ -390,13 +407,12 @@ export default function InsurancePage() {
               <p className="text-xs text-slate-500 mb-6 -mt-2">Berapa dana yang dibutuhkan keluarga untuk bertahan hidup tanpa penghasilan utama?</p>
 
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                  {/* --- MODIFIKASI INPUT GAJI --- */}
+                  {/* Gaji Bersih (Full Width on Grid) */}
                   <div className="space-y-1 md:col-span-2">
                     <div className="flex justify-between items-center ml-1">
                       <label className="text-[10px] font-bold text-brand-600 uppercase">Gaji Bersih Setahun</label>
-                      {/* BUTTON BANTU HITUNG GAJI */}
                       <button
                         type="button"
                         onClick={() => {
@@ -420,7 +436,7 @@ export default function InsurancePage() {
                     <p className="text-[9px] text-slate-400 ml-1 mt-1">*Total gaji 12 bulan (Take Home Pay)</p>
                   </div>
 
-                  {/* [FIXED] InfoPopover Usage */}
+                  {/* Lama Ditanggung */}
                   <div className="space-y-1">
                     <div className="flex items-center gap-1">
                       <label className="text-[10px] font-bold text-slate-500 uppercase">Lama Ditanggung</label>
@@ -440,6 +456,38 @@ export default function InsurancePage() {
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Tahun</span>
                     </div>
+                    {errors.protectionDuration && (
+                      <p className="text-[10px] text-red-500 font-bold flex items-center gap-1 mt-1">
+                        <AlertCircle className="w-3 h-3" /> {errors.protectionDuration}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Jumlah Tanggungan (Protected Variations) */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Jumlah Tanggungan</label>
+                      <InfoPopover content={{
+                        title: "Jumlah Tanggungan",
+                        definition: "Jumlah anggota keluarga yang bergantung secara finansial kepada Anda.",
+                        example: "Nilai default diambil otomatis dari profil Anda, namun dapat disesuaikan jika merencanakan penambahan anggota keluarga."
+                      }} />
+                    </div>
+                    <div className="relative group">
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={dependentCount}
+                        onChange={e => handleYearInput(e.target.value, setDependentCount)}
+                        className="h-12 bg-slate-50 text-center font-bold text-slate-800 border-slate-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 rounded-xl pr-14 pl-4"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase text-slate-400">Orang</span>
+                    </div>
+                    {errors.dependentCount && (
+                      <p className="text-[10px] text-red-500 font-bold flex items-center gap-1 mt-1">
+                        <AlertCircle className="w-3 h-3" /> {errors.dependentCount}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -638,7 +686,6 @@ export default function InsurancePage() {
                 />
               </div>
 
-              {/* [FIXED] Input bulan disembunyikan jika mode INCOME */}
               {!showIncomeModal && (
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">

@@ -5,6 +5,7 @@ export interface UserPayload {
     id: string;
     email: string;
     role: string;
+    dependentCount?: number; // [FIX] Ekspansi properti untuk kalkulator finansial
     iat: number;
     exp: number;
 }
