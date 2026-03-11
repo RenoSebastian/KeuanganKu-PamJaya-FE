@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence, Variants } from "framer-motion"; // [FIX]: Import Variants
+import { motion, Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { HealthGauge } from "@/components/features/dashboard/health-gauge";
 import {
-  Sparkles, TrendingUp, Calendar, ArrowRight, Info, AlertCircle,
-  Wallet, Loader2, Activity, Lightbulb, BellRing
+  Sparkles, TrendingUp, Calendar, ArrowRight, Wallet, Loader2, Lightbulb, BellRing
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -19,13 +18,11 @@ import { HealthAnalysisResult, User } from "@/lib/types";
 const formatMoney = (val: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(val);
 
-// [FIX]: Tambahkan tipe ": Variants"
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.1 } }
 };
 
-// [FIX]: Tambahkan tipe ": Variants"
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
@@ -109,14 +106,11 @@ export default function DashboardPage() {
       {/* =========================================
           DYNAMIC HERO HEADER (Immersive)
           ========================================= */}
-      {/* [FIX Tailwind]: h-[380px] -> h-95, md:h-[420px] -> md:h-105 */}
       <div className={cn(
         "absolute top-0 left-0 w-full h-95 md:h-105 rounded-b-[3rem] md:rounded-b-[4rem] shadow-2xl z-0 overflow-hidden transition-colors duration-1000 bg-linear-to-br",
         bgTheme
       )}>
-        {/* [FIX Tailwind]: w-[500px] h-[500px] -> w-125 h-125 */}
-        <motion.div animate={{ scale: [1, 1.2, 1], rotate: [0, 5, 0] }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} className="absolute -top-[20%] -right-[10%] w-125 h-125 bg-white/10 rounded-full blur-[100px] pointer-events-none" />
-        {/* [FIX Tailwind]: w-[400px] h-[400px] -> w-100 h-100 */}
+        <motion.div animate={{ scale: [1, 1.2, 1], rotate: 360 }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} className="absolute -top-[20%] -right-[10%] w-125 h-125 bg-white/10 rounded-full blur-[100px] pointer-events-none" />
         <motion.div animate={{ scale: [1.2, 1, 1.2], x: [0, -30, 0] }} transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-[10%] -left-[10%] w-100 h-100 bg-black/10 rounded-full blur-[80px] pointer-events-none" />
         <div className="absolute inset-0 bg-[url('/images/noise.png')] opacity-[0.03] mix-blend-overlay" />
       </div>
@@ -159,7 +153,6 @@ export default function DashboardPage() {
 
           {/* --- MAIN HERO CARD (Kiri/Atas) --- */}
           <motion.div variants={itemVariants} className="md:col-span-8">
-            {/* [FIX Tailwind]: min-h-[300px] -> min-h-75 */}
             <div className="bg-white/95 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl shadow-blue-900/5 overflow-hidden relative border border-white p-6 md:p-8 min-h-75 flex flex-col justify-center group">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-10 gap-4">
@@ -167,8 +160,10 @@ export default function DashboardPage() {
                   <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">Menganalisa Data...</p>
                 </div>
               ) : (
-                <div className="flex flex-col md:flex-row items-center gap-8">
-                  <div className="flex-1 space-y-6 text-center md:text-left relative z-10">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center">
+
+                  {/* TEXT CONTENT */}
+                  <div className="md:col-span-7 flex flex-col space-y-5 text-center md:text-left relative z-10">
                     <div className="inline-flex items-center justify-center md:justify-start gap-2">
                       <div className="p-2 bg-blue-50 rounded-xl text-blue-600 shadow-inner">
                         <Sparkles className="w-5 h-5" />
@@ -176,13 +171,13 @@ export default function DashboardPage() {
                       <span className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Status Kesehatan</span>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {hasData ? (
                         <>
                           <div className="flex flex-col md:flex-row items-center md:items-baseline gap-3">
-                            <h2 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter">{status}</h2>
+                            <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">{status}</h2>
                             <span className={cn(
-                              "px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border flex items-center gap-2",
+                              "px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border flex items-center gap-2 mt-2 md:mt-0",
                               score >= 80 ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
                                 score >= 50 ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-rose-50 text-rose-600 border-rose-200"
                             )}>
@@ -190,42 +185,47 @@ export default function DashboardPage() {
                               {score >= 50 ? "Optimal" : "Kritis"}
                             </span>
                           </div>
-                          <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-md mx-auto md:mx-0">
+                          <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-sm mx-auto md:mx-0">
                             {recommendation}
                           </p>
                         </>
                       ) : (
                         <>
                           <h2 className="text-3xl font-black text-slate-400 tracking-tight">Belum Ada Data</h2>
-                          <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                          <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-sm mx-auto md:mx-0">
                             Diagnosa kondisi keuanganmu sekarang untuk merencanakan masa depan yang lebih baik.
                           </p>
                         </>
                       )}
                     </div>
 
-                    <Button
-                      onClick={() => router.push("/finance/checkup")}
-                      className={cn(
-                        "h-14 px-8 rounded-2xl text-[15px] font-black tracking-wide shadow-xl transition-all hover:scale-105 active:scale-95",
-                        hasData ? "bg-slate-900 hover:bg-black text-white shadow-slate-200" : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200"
-                      )}
-                    >
-                      {hasData ? "Update Rapor Keuangan" : "Mulai Checkup Sekarang"}
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
+                    <div className="pt-2">
+                      <Button
+                        onClick={() => router.push("/finance/checkup")}
+                        className={cn(
+                          "h-14 px-8 rounded-2xl text-[15px] font-black tracking-wide shadow-xl transition-all hover:scale-105 active:scale-95 w-full md:w-auto",
+                          hasData ? "bg-slate-900 hover:bg-black text-white shadow-slate-200" : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200"
+                        )}
+                      >
+                        {hasData ? "Update Rapor" : "Mulai Checkup"}
+                        <ArrowRight className="w-5 h-5 ml-2" />
+                      </Button>
+                    </div>
                   </div>
 
                   {/* GAUGE WIDGET */}
-                  <div className="shrink-0 relative w-56 h-56 md:w-64 md:h-64 flex items-center justify-center">
-                    <div className={cn(
-                      "absolute inset-0 rounded-full blur-[60px] opacity-20 transition-all duration-1000",
-                      !hasData ? "bg-slate-300" : score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-rose-500"
-                    )} />
-                    <div className={cn("relative z-10 transform group-hover:scale-105 transition-transform duration-700", !hasData && "opacity-40 grayscale")}>
-                      <HealthGauge score={score} />
+                  <div className="md:col-span-5 flex items-center justify-center relative w-full h-56 md:h-64">
+                    <div className="relative w-56 h-56 md:w-64 md:h-64 flex items-center justify-center">
+                      <div className={cn(
+                        "absolute inset-0 rounded-full blur-[60px] opacity-20 transition-all duration-1000",
+                        !hasData ? "bg-slate-300" : score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-rose-500"
+                      )} />
+                      <div className={cn("relative z-10 transform group-hover:scale-105 transition-transform duration-700 w-full h-full", !hasData && "opacity-40 grayscale")}>
+                        <HealthGauge score={score} />
+                      </div>
                     </div>
                   </div>
+
                 </div>
               )}
             </div>
@@ -289,7 +289,7 @@ export default function DashboardPage() {
                 >
                   <div className={cn(
                     "w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-[1.2rem] text-3xl md:text-4xl mb-4 transition-all duration-300 shadow-inner group-hover:scale-110",
-                    item.style.split(' ')[0]
+                    item.style.split(' ')
                   )}>
                     <span className="transform group-hover:rotate-12 transition-transform duration-300">{item.emoji}</span>
                   </div>
@@ -303,7 +303,6 @@ export default function DashboardPage() {
 
           {/* --- TIPS WIDGET --- */}
           <motion.div variants={itemVariants} className="md:col-span-12 mt-4 hidden md:block">
-            {/* [FIX Tailwind]: bg-gradient-to-r -> bg-linear-to-r */}
             <div className="bg-linear-to-r from-blue-600 to-indigo-600 rounded-[2rem] p-6 text-white shadow-xl relative overflow-hidden flex items-center justify-between group">
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:translate-x-10 transition-transform duration-1000" />
               <div className="flex items-center gap-5 relative z-10">
@@ -345,5 +344,5 @@ function StatRow({ label, value, type }: { label: string, value: number, type: '
         {formatMoney(value).replace("Rp", "Rp ")}
       </span>
     </div>
-  )
+  );
 }
